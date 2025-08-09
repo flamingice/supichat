@@ -1,0 +1,52 @@
+version: '3.9'
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: infra/web.Dockerfile
+    env_file:
+      - ../.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - signaling
+  signaling:
+    build:
+      context: ..
+      dockerfile: infra/signaling.Dockerfile
+    environment:
+      - NEXT_PUBLIC_SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/MyChatApp/socket.io}
+    ports:
+      - "4001:4001"
+  coturn:
+    image: coturn/coturn:latest
+    network_mode: host
+    command: >
+      -n --no-cli --no-tls --no-dtls
+      --realm=supichat
+      --listening-port=3478
+      --min-port=49160 --max-port=49200
+      --lt-cred-mech --use-auth-secret --static-auth-secret=${TURN_SECRET}
+      --fingerprint
+
+# HEALTHCHECKS APPEND START
+# To enable healthchecks, ensure curl is available in images or switch to wget/busybox.
+# web healthcheck via Next.js API route
+# signaling healthcheck via Express /health
+# Add these under each service if you want Docker to track health.
+# Example:
+#  web:
+#    healthcheck:
+#      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/MyChatApp/api/health || exit 1"]
+#      interval: 30s
+#      timeout: 3s
+#      retries: 3
+#  signaling:
+#    healthcheck:
+#      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4001/health || exit 1"]
+#      interval: 30s
+#      timeout: 3s
+#      retries: 3
+# HEALTHCHECKS APPEND END
+
+
