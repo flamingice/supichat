@@ -20,7 +20,10 @@ services:
       - "4001:4001"
   coturn:
     image: coturn/coturn:latest
-    network_mode: host
+    profiles: ["turn"]
+    ports:
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
     command: >
       -n --no-cli --no-tls --no-dtls
       --realm=supichat

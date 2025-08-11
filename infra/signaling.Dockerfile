@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /srv
 COPY services/signaling/package.json ./
-RUN npm i --only=prod
+RUN npm install --omit=dev
 COPY services/signaling ./
 ENV PORT=4001
 EXPOSE 4001

@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
-    "start": "npm run start -w apps/web"
+    "start": "npm run start -w apps/web",
+    "dev:windows": "start-windows.bat",
+    "dev:windows:ps": "powershell -ExecutionPolicy Bypass -File start-windows.ps1",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:signaling": "npm run start -w services/signaling",
+    "install:all": "npm install && npm install -w apps/web && npm install -w services/signaling",
+    "install:nodejs": "powershell -ExecutionPolicy Bypass -File install-nodejs.ps1"
   }
 }
 
