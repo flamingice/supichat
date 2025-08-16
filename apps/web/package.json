@@ -24,15 +24,12 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.46.0",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
-    "@playwright/test": "^1.46.0",
+    "@types/uuid": "^9.0.8",
     "typescript": "^5.4.5",
     "vitest": "^2.0.5"
   }
 }
-
-
-
-

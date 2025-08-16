@@ -22,6 +22,7 @@ npm install -g pm2 >/dev/null 2>&1 || sudo npm install -g pm2
 echo "Installing workspace dependencies..."
 npm ci || npm install
 npm install -w apps/web
+npm install -w apps/web --save-dev @types/uuid || true
 npm install -w services/signaling
 
 echo "Creating env files if missing..."
