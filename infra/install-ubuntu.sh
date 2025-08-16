@@ -130,6 +130,10 @@ if [ "$(id -u)" = "0" ] && [ "$RUN_AS_USER" != "root" ]; then
   chown -R "$RUN_AS_USER":"$RUN_AS_USER" .
   # Ensure pm2 is installed for that user environment
   sudo -u "$RUN_AS_USER" -H pm2 -v >/dev/null 2>&1 || sudo -u "$RUN_AS_USER" -H npm install -g pm2 || true
+  
+  # Prime PM2 daemon for the chosen user (avoids spawn EACCES on first run)
+  # This initializes the PM2 daemon process under the target user to prevent permission errors
+  sudo -u "$RUN_AS_USER" -H /usr/bin/node /usr/lib/node_modules/pm2/lib/Daemon.js >/dev/null 2>&1 || true
 fi
 
 # Save runtime config
@@ -174,10 +178,13 @@ popd >/dev/null
 
 pushd apps/web >/dev/null
 STANDALONE_SERVER=""
-if compgen -G ".next/standalone/*/server.js" > /dev/null; then
-  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
+# Detect Next.js standalone server with nested path support
+if [ -f ".next/standalone/apps/web/server.js" ]; then
+  STANDALONE_SERVER=".next/standalone/apps/web/server.js"
 elif [ -f ".next/standalone/server.js" ]; then
   STANDALONE_SERVER=".next/standalone/server.js"
+elif compgen -G ".next/standalone/*/server.js" > /dev/null; then
+  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
 fi
 
 if [ -n "$STANDALONE_SERVER" ]; then
@@ -237,10 +244,13 @@ run_pm2() {
 pushd apps/web >/dev/null
 npm run build
 STANDALONE_SERVER=""
-if compgen -G ".next/standalone/*/server.js" > /dev/null; then
-  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
+# Detect Next.js standalone server with nested path support
+if [ -f ".next/standalone/apps/web/server.js" ]; then
+  STANDALONE_SERVER=".next/standalone/apps/web/server.js"
 elif [ -f ".next/standalone/server.js" ]; then
   STANDALONE_SERVER=".next/standalone/server.js"
+elif compgen -G ".next/standalone/*/server.js" > /dev/null; then
+  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
 fi
 
 if [ -n "$STANDALONE_SERVER" ]; then
