@@ -29,6 +29,36 @@ echo "Creating env files if missing..."
 [ -f apps/web/.env.local ] || cp apps/web/env.local.example apps/web/.env.local
 [ -f .env ] || cp infra/env.local.example .env
 
+# Ensure DeepL keys placeholders exist and print setup instructions
+if ! grep -q '^DEEPL_API_KEY=' apps/web/.env.local 2>/dev/null; then
+  cat >> apps/web/.env.local <<'EOF'
+
+# DeepL translation (server-side)
+DEEPL_API_KEY=
+# If using free tier, uncomment:
+# DEEPL_API_FREE=1
+# Optional custom endpoint:
+# DEEPL_API_URL=https://api-free.deepl.com/v2/translate
+EOF
+fi
+if ! grep -q '^DEEPL_API_KEY=' .env 2>/dev/null; then
+  cat >> .env <<'EOF'
+
+# DeepL translation (used by Docker compose)
+DEEPL_API_KEY=
+# DEEPL_API_FREE=1
+EOF
+fi
+
+echo
+echo "IMPORTANT: Set your API keys before starting SupiChat:"
+echo "  - Edit apps/web/.env.local and set:"
+echo "      DEEPL_API_KEY=your-deepl-key"
+echo "    Optional (free tier): DEEPL_API_FREE=1"
+echo "  - If you deploy with Docker later, also edit .env similarly."
+echo "  - Never prefix secrets with NEXT_PUBLIC_."
+echo
+
 echo "Building web app..."
 npm run build -w apps/web
 
