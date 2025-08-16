@@ -1,5 +1,6 @@
 FROM node:18-alpine
-RUN addgroup --system --gid 1001 nodejs && \
+RUN apk add --no-cache wget && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 signaling
 
 WORKDIR /app

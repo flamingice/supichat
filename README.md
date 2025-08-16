@@ -214,24 +214,56 @@ Notes:
   ```
   Ensure `TURN_SECRET` is set in `.env`.
 
-## Production Deployment
+## 🚀 Quick Start (Production)
 
-### Docker (Recommended) 🐳
-
-**Cleanest, most secure, and zero-dependency deployment:**
+**One command deployment with Docker:**
 
 ```bash
-# Install Docker
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER  # Log out and back in
-
-# Deploy SupiChat
+# Fresh Ubuntu/Debian server? Run this:
 git clone https://github.com/yourusername/supichat.git
 cd supichat
 bash infra/install-docker.sh
 ```
 
-**Benefits:** Isolated environment, automatic user security, no Node.js installation required, easy updates.
+**That's it!** The script automatically:
+- ✅ Installs Docker if missing
+- ✅ Builds and starts SupiChat  
+- ✅ Creates management scripts
+- ✅ Handles camera/microphone access guidance
+
+## 📹 Camera/Microphone Access
+
+**For Testing:**
+- ✅ **localhost** - Always works (even HTTP): `http://localhost:3000/supichat`
+- ✅ **127.0.0.1** - Always works: `http://127.0.0.1:3000/supichat`
+
+**For Production (Public IP):**
+- 🔒 **HTTPS required** - Run `./ssl-setup.sh` after installation
+- 🏷️ **Domain recommended** - Point domain to your server IP
+
+**For Testing Public IP without HTTPS:**
+- 🛠️ **Chrome flags**: `--unsafely-treat-insecure-origin-as-secure=http://YOUR_IP:3000`
+
+---
+
+## 🛠️ Development
+
+**Local development with hot reload:**
+
+```bash
+# Clone and start
+git clone https://github.com/yourusername/supichat.git
+cd supichat
+npm install
+npm run dev
+
+# Access at http://localhost:3000/supichat
+# Camera/mic work perfectly on localhost!
+```
+
+---
+
+## 🔧 Alternative Deployments
 
 ### systemd (Traditional) ⚙️
 

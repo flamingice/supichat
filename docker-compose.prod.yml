@@ -5,48 +5,56 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - "${WEB_PORT:-3000}:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-/supichat}
       - NEXT_PUBLIC_SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/supichat/socket.io}
+      - NEXT_PUBLIC_SIGNALING_ORIGIN=${NEXT_PUBLIC_SIGNALING_ORIGIN}
       - DEEPL_API_KEY=${DEEPL_API_KEY}
     restart: unless-stopped
-    user: "1001:1001"
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
+    networks:
+      - supichat
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/supichat/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   signaling:
     build:
       context: .
       dockerfile: Dockerfile.signaling
-    ports:
-      - "${SIGNALING_PORT:-4001}:4001"
+    expose:
+      - "4001"
     environment:
       - NODE_ENV=production
       - SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/supichat/socket.io}
     restart: unless-stopped
-    user: "1001:1001"
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
+    networks:
+      - supichat
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  nginx:
+  # Simple reverse proxy for development/testing
+  proxy:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - "${WEB_PORT:-3000}:80"
+      - "${SIGNALING_PORT:-4001}:4001"
     volumes:
-      - ./infra/nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - /etc/ssl/supichat:/etc/ssl/supichat:ro
-      - /var/www/certbot:/var/www/certbot:ro
+      - ./infra/nginx.simple.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web
       - signaling
     restart: unless-stopped
+    networks:
+      - supichat
+
+networks:
+  supichat:
+    driver: bridge
