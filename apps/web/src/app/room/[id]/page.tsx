@@ -113,7 +113,11 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
         setReady(true);
       } catch (err: any) {
-        setPermissionError('Camera/Microphone permission denied.');
+        setPermissionError('Camera/Microphone permission denied. You can still join without devices.');
+        setLocalStream(null);
+        setLocalMicEnabled(false);
+        setLocalCamEnabled(false);
+        setReady(true);
       }
     })();
   }, []);
@@ -371,7 +375,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <button data-testid="join-btn" onClick={joinRoom} disabled={!ready || !name} className="btn btn-accent w-full disabled:opacity-50">Join now</button>
-            <div className="text-xs text-neutral-400">Grant access to your camera and microphone to join.</div>
+            <div className="text-xs text-neutral-400">Grant access to use camera/mic, or join without them.</div>
           </div>
         </div>
       ) : (
