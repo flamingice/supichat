@@ -216,7 +216,7 @@ Notes:
 
 ## Deployment
 
-For production deployment, see the Docker configuration in the `infra/` directory and consider enabling TURN on a VPS or using a managed TURN service.
+For production deployment, see the Docker configuration in the `infra/` directory and consider enabling TURN on a VPS or using a managed TURN service. For bare-VM installs, run `bash infra/install-ubuntu.sh`, then `./start.sh`. After `git pull`, run `./restart.sh`.
 
 ## License
 

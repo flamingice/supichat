@@ -66,8 +66,13 @@ echo "Creating start/stop scripts..."
 cat > start.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
-pm2 start services/signaling/server.js --name supichat-signaling --cwd $(pwd)/services/signaling --update-env
-pm2 start npm --name supichat-web --time -- start --cwd $(pwd)/apps/web
+pushd services/signaling >/dev/null
+pm2 start server.js --name supichat-signaling --update-env
+popd >/dev/null
+
+pushd apps/web >/dev/null
+pm2 start npm --name supichat-web -- start
+popd >/dev/null
 pm2 save
 pm2 status
 EOS
@@ -86,8 +91,13 @@ chmod +x stop.sh
 cat > restart.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
-pm2 restart supichat-web || pm2 start npm --name supichat-web -- start --cwd $(pwd)/apps/web
-pm2 restart supichat-signaling || pm2 start services/signaling/server.js --name supichat-signaling --cwd $(pwd)/services/signaling --update-env
+pushd apps/web >/dev/null
+pm2 restart supichat-web || pm2 start npm --name supichat-web -- start
+popd >/dev/null
+
+pushd services/signaling >/dev/null
+pm2 restart supichat-signaling || pm2 start server.js --name supichat-signaling --update-env
+popd >/dev/null
 pm2 save
 EOS
 chmod +x restart.sh
