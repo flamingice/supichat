@@ -85,8 +85,8 @@ SupiChat includes automatic Node.js installation! If Node.js is not detected on 
    ```env
    # Signaling server configuration
    NEXT_PUBLIC_SIGNALING_ORIGIN=http://localhost:4001
-   NEXT_PUBLIC_SIGNALING_PATH=/MyChatApp/socket.io
-   NEXT_PUBLIC_BASE_PATH=/MyChatApp
+   NEXT_PUBLIC_SIGNALING_PATH=/supichat/socket.io
+   NEXT_PUBLIC_BASE_PATH=/supichat
    
    # Default language
    NEXT_PUBLIC_DEFAULT_LANG=en
@@ -141,6 +141,7 @@ supichat/
 - `npm run install:all` - Install all dependencies
 - `npm run build` - Build for production
 - `npm run start` - Start production build
+- `npm run smoke` - Run a local smoke test (curl-based)
 
 ### Windows Scripts
 
@@ -193,15 +194,15 @@ Quickest way to run everything with minimal setup using Docker Desktop:
    # macOS/Linux
    # cp infra/env.local.example .env
    ```
-   Then edit `.env` to add your `OPENAI_API_KEY` (used for chat translation).
+   Then edit `.env` to add your `DEEPL_API_KEY` (used for chat translation).
 3. Start services:
    ```bash
    docker compose -f infra/docker-compose.yml up --build
    ```
-4. Open: http://localhost:3000/MyChatApp
+4. Open: http://localhost:3000/supichat
 5. Health checks (optional):
    ```bash
-   curl http://localhost:3000/MyChatApp/api/health
+   curl http://localhost:3000/supichat/api/health
    curl http://localhost:4001/health
    ```
 

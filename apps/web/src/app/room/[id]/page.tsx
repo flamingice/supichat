@@ -5,8 +5,8 @@ import { io, Socket } from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 import { LANGS, getLangLabel } from '@/lib/i18n';
 
-const SIGNALING_PATH = process.env.NEXT_PUBLIC_SIGNALING_PATH || '/MyChatApp/socket.io';
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '/MyChatApp';
+const SIGNALING_PATH = process.env.NEXT_PUBLIC_SIGNALING_PATH || '/supichat/socket.io';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '/supichat';
 
 type RemotePeer = {
   id: string;
@@ -62,8 +62,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       (typeof location !== 'undefined' && location.hostname === 'localhost' && location.port === '3000'
         ? 'http://localhost:4001'
         : (typeof location !== 'undefined' ? location.origin : ''));
-    const url = `${SIGNALING_ORIGIN}${SIGNALING_PATH}`;
-    const socket = io(url, { path: SIGNALING_PATH, transports: ['websocket'] });
+    const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH, transports: ['websocket'] });
     socketRef.current = socket;
 
     socket.on('connect', () => {

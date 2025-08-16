@@ -2,29 +2,29 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   const { text, targetLang } = await req.json();
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.DEEPL_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 });
+    return NextResponse.json({ error: 'Missing DEEPL_API_KEY' }, { status: 500 });
   }
 
-  const model = process.env.OPENAI_TRANSLATE_MODEL || 'gpt-5-mini';
-  const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
+  // Default DeepL endpoint; allow override for free/commercial endpoints
+  const apiUrl = process.env.DEEPL_API_URL ||
+    (process.env.DEEPL_API_FREE === '1' || process.env.DEEPL_API_FREE === 'true'
+      ? 'https://api-free.deepl.com/v2/translate'
+      : 'https://api.deepl.com/v2/translate');
+
+  // DeepL expects uppercase language codes, e.g. EN, DE, JA, ZH
+  const target = String(targetLang || 'EN').toUpperCase();
 
   try {
-    const response = await fetch(`${apiBase}/chat/completions`, {
+    const body = new URLSearchParams({ text: String(text || ''), target_lang: target });
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: 'You are a translation engine. Output only the translation with no extra words.' },
-          { role: 'user', content: `Translate to ${targetLang}: ${text}` }
-        ]
-      })
+      body: body.toString()
     });
 
     if (!response.ok) {
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json();
-    const translated = data?.choices?.[0]?.message?.content ?? '';
+    const translated = data?.translations?.[0]?.text ?? '';
     return NextResponse.json({ translated });
   } catch (err: any) {
     return NextResponse.json({ error: 'Translation error', details: String(err?.message || err) }, { status: 500 });

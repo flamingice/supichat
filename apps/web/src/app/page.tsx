@@ -7,9 +7,9 @@ export default function HomePage() {
   async function createRoom() {
     setCreating(true);
     try {
-      const r = await fetch('./api/room/create', { method: 'POST' });
+      const r = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || '/supichat'}/api/room/create`, { method: 'POST' });
       const j = await r.json();
-      location.href = `./room/${j.id}`;
+      location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || '/supichat'}/room/${j.id}`;
     } finally {
       setCreating(false);
     }

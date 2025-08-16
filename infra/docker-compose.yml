@@ -15,7 +15,7 @@ services:
       context: ..
       dockerfile: infra/signaling.Dockerfile
     environment:
-      - NEXT_PUBLIC_SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/MyChatApp/socket.io}
+      - NEXT_PUBLIC_SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/supichat/socket.io}
     ports:
       - "4001:4001"
   coturn:
@@ -40,7 +40,7 @@ services:
 # Example:
 #  web:
 #    healthcheck:
-#      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/MyChatApp/api/health || exit 1"]
+#      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/supichat/api/health || exit 1"]
 #      interval: 30s
 #      timeout: 3s
 #      retries: 3

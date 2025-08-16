@@ -18,7 +18,12 @@ cp infra/env.local.example .env     # macOS/Linux
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-Open: http://localhost:3000/MyChatApp
+Open: http://localhost:3000/supichat
+
+For quick verification without a browser, you can run from host:
+```bash
+curl -sSf http://localhost:3000/supichat >/dev/null && echo OK || echo FAIL
+```
 
 Notes:
 - For local dev, TURN is optional; STUN is sufficient within the same network.

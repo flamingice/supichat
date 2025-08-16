@@ -11,7 +11,8 @@
     "dev:web": "npm run dev -w apps/web",
     "dev:signaling": "npm run start -w services/signaling",
     "install:all": "npm install && npm install -w apps/web && npm install -w services/signaling",
-    "install:nodejs": "powershell -ExecutionPolicy Bypass -File install-nodejs.ps1"
+    "install:nodejs": "powershell -ExecutionPolicy Bypass -File install-nodejs.ps1",
+    "smoke": "bash scripts/smoke.sh"
   }
 }
 

@@ -5,7 +5,7 @@ export async function GET() {
     status: 'ok',
     service: 'web',
     timestamp: new Date().toISOString(),
-    basePath: process.env.NEXT_PUBLIC_BASE_PATH || '/MyChatApp'
+    basePath: process.env.NEXT_PUBLIC_BASE_PATH || '/supichat'
   });
 }
 
