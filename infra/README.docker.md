@@ -25,6 +25,14 @@ For quick verification without a browser, you can run from host:
 curl -sSf http://localhost:3000/supichat >/dev/null && echo OK || echo FAIL
 ```
 
+To restart services after pulling latest code:
+```bash
+docker compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml up -d --build
+```
+
+Systemd alternative (on a VPS without Docker): create unit files to run `apps/web` (Next.js) and `services/signaling` (Node) as services, or use the provided script below.
+
 Notes:
 - For local dev, TURN is optional; STUN is sufficient within the same network.
 - The `coturn` service is disabled by default using profiles.

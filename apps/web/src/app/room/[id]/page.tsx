@@ -436,7 +436,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             <div className="pointer-events-auto mx-auto w-fit glass px-3 py-2 rounded-2xl flex items-center gap-2" style={{height:68}}>
               <button data-testid="toggle-mic" onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`} title="Mic">{localMicEnabled?'🎤':'🔇'}</button>
               <button data-testid="toggle-cam" onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`} title="Camera">{localCamEnabled?'📷':'🚫📷'}</button>
-              <button data-testid="share" className="btn" title="Share screen" disabled>🖥️</button>
+              <button data-testid="share" className="btn opacity-50 cursor-not-allowed bg-neutral-700 hover:bg-neutral-700 text-neutral-400" title="Screen sharing not available" disabled aria-disabled>🖥️</button>
               <button data-testid="open-chat" onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} className="btn" title="Chat">💬{unread>0?<span className="badge ml-1">{unread}</span>:null}</button>
               <button data-testid="open-people" onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} className="btn" title="People">👥<span className="badge ml-1">{1+peers.length}</span></button>
               <button onClick={() => setSidebarOpen(true)} className="btn" title="Settings">⚙</button>
