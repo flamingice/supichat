@@ -1,10 +1,19 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const { text, targetLang } = await req.json();
+  let text: string = '';
+  let targetLang: string = 'EN';
+  try {
+    const body = await req.json();
+    text = String(body?.text ?? '');
+    targetLang = String(body?.targetLang ?? 'EN');
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
   const apiKey = process.env.DEEPL_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'Missing DEEPL_API_KEY' }, { status: 500 });
+    // Optional soft-fail: return empty translation instead of 500
+    return NextResponse.json({ translated: '' }, { status: 200 });
   }
 
   // Default DeepL endpoint; allow override for free/commercial endpoints

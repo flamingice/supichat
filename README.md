@@ -218,6 +218,20 @@ Notes:
 
 For production deployment, see the Docker configuration in the `infra/` directory and consider enabling TURN on a VPS or using a managed TURN service. For bare-VM installs, run `bash infra/install-ubuntu.sh`, then `./start.sh`. After `git pull`, run `./restart.sh`.
 
+### Production (Linux)
+- Use the Nginx example in `infra/nginx.conf`:
+  - Preserve the basePath by removing the trailing slash on `proxy_pass` (use `http://127.0.0.1:3000` not `.../`).
+  - Add `location = /supichat { return 301 /supichat/; }` to avoid slash-redirect loops.
+  - Keep websocket headers and longer timeouts under `/supichat/socket.io/`.
+- Build web: `npm run build -w apps/web`
+- Start with PM2 using Next.js standalone if present:
+  - `.next/standalone/server.js` is preferred (scripts updated to auto-detect).
+- Ensure env:
+  - `NEXT_PUBLIC_BASE_PATH=/supichat`
+  - `NEXT_PUBLIC_SIGNALING_PATH=/supichat/socket.io`
+- Translation:
+  - Set `DEEPL_API_KEY` to enable translations. If unset, `/api/translate` returns an empty result and smoke test skips translation.
+
 HTTPS (domain or IP)
 - Run interactive HTTPS setup: `sudo bash infra/setup-https.sh your.domain` or your server IP.
 - For IP certificates, Let’s Encrypt has announced short‑lived IP certs (~6 days). Not all ACME clients (e.g. certbot) may fully support them yet. The script will attempt issuance; if unsupported, it offers a self‑signed fallback and leaves a renewal timer only when an LE IP cert is present. See: [Let’s Encrypt – We’ve Issued Our First IP Address Certificate](https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate).
