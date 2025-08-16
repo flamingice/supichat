@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 import { LANGS, getLangLabel } from '@/lib/i18n';
+import { ErrorBoundary, VideoErrorBoundary } from '@/components/ErrorBoundary';
 
 const SIGNALING_PATH = process.env.NEXT_PUBLIC_SIGNALING_PATH || '/supichat/socket.io';
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '/supichat';
@@ -317,14 +318,16 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       {!joined ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="tile p-3 relative">
-            <div className="aspect-video bg-black rounded-xl overflow-hidden">
-              <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-              {!localCamEnabled ? (<div className="absolute inset-0 flex items-center justify-center text-neutral-400">🚫📷</div>) : null}
-            </div>
-            {/* mic level */}
-            <div className="absolute left-3 bottom-3 h-2 w-40 bg-black/50 rounded-full overflow-hidden">
-              <div className="h-2 bg-green-500" style={{ width: `${Math.min(100, Math.max(4, micLevel/2))}%` }} />
-            </div>
+            <VideoErrorBoundary>
+              <div className="aspect-video bg-black rounded-xl overflow-hidden">
+                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                {!localCamEnabled ? (<div className="absolute inset-0 flex items-center justify-center text-neutral-400">🚫📷</div>) : null}
+              </div>
+              {/* mic level */}
+              <div className="absolute left-3 bottom-3 h-2 w-40 bg-black/50 rounded-full overflow-hidden">
+                <div className="h-2 bg-green-500" style={{ width: `${Math.min(100, Math.max(4, micLevel/2))}%` }} />
+              </div>
+            </VideoErrorBoundary>
           </div>
           <div className="tile p-4 space-y-3">
             {permissionError ? (
@@ -382,57 +385,61 @@ export default function RoomPage({ params }: { params: { id: string } }) {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="md:col-span-2 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                  <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-52 bg-black rounded" />
-                  <div className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs">You</div>
-                  {!localMicEnabled ? <div className="absolute right-2 top-2 rounded bg-error px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Mic off</div> : null}
-                  {!localCamEnabled ? <div className="absolute right-2 top-7 rounded px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Cam off</div> : null}
+              <VideoErrorBoundary>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-52 bg-black rounded" />
+                    <div className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs">You</div>
+                    {!localMicEnabled ? <div className="absolute right-2 top-2 rounded bg-error px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Mic off</div> : null}
+                    {!localCamEnabled ? <div className="absolute right-2 top-7 rounded px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Cam off</div> : null}
+                  </div>
+                  {peers.map(p => (
+                    <div key={p.id} className="relative">
+                      <video
+                        autoPlay
+                        playsInline
+                        className="w-full h-52 bg-black rounded"
+                        ref={el => {
+                          if (el && p.stream) {
+                            (el as any).srcObject = p.stream;
+                            el.muted = isPeerMuted(p.id);
+                          }
+                        }}
+                      />
+                      <div className="absolute left-2 bottom-2 glass px-2 py-1 text-xs flex items-center gap-2">
+                        <span>{p.name || 'Guest'}</span>
+                        <span className="badge">{(p.lang || '').toUpperCase()}</span>
+                        <span title={isPeerMuted(p.id) ? 'Muted locally' : 'Live'}>{isPeerMuted(p.id) ? '🔇' : '🎤'}</span>
+                      </div>
+                      <div className="absolute right-2 top-2 flex gap-2">
+                        <button onClick={() => setPinnedPeerId(p.id === pinnedPeerId ? null : p.id)} className="pill hover:bg-white/10" title="Pin">📌</button>
+                        <button onClick={() => togglePeerMute(p.id)} className="pill hover:bg-white/10" title={isPeerMuted(p.id)?'Unmute':'Mute'}>{isPeerMuted(p.id)?'Unmute':'Mute'}</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {peers.map(p => (
-                  <div key={p.id} className="relative">
-                    <video
-                      autoPlay
-                      playsInline
-                      className="w-full h-52 bg-black rounded"
-                      ref={el => {
-                        if (el && p.stream) {
-                          (el as any).srcObject = p.stream;
-                          el.muted = isPeerMuted(p.id);
-                        }
-                      }}
-                    />
-                    <div className="absolute left-2 bottom-2 glass px-2 py-1 text-xs flex items-center gap-2">
-                      <span>{p.name || 'Guest'}</span>
-                      <span className="badge">{(p.lang || '').toUpperCase()}</span>
-                      <span title={isPeerMuted(p.id) ? 'Muted locally' : 'Live'}>{isPeerMuted(p.id) ? '🔇' : '🎤'}</span>
-                    </div>
-                    <div className="absolute right-2 top-2 flex gap-2">
-                      <button onClick={() => setPinnedPeerId(p.id === pinnedPeerId ? null : p.id)} className="pill hover:bg-white/10" title="Pin">📌</button>
-                      <button onClick={() => togglePeerMute(p.id)} className="pill hover:bg-white/10" title={isPeerMuted(p.id)?'Unmute':'Mute'}>{isPeerMuted(p.id)?'Unmute':'Mute'}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              </VideoErrorBoundary>
             </div>
-            <div className="space-y-3">
-              <div className="text-lg font-semibold">Chat</div>
-              <div className="h-96 overflow-auto rounded bg-neutral-900 p-3 space-y-2">
-                {messages.map(m => (
-                  <div key={m.id} className="text-sm">
-                    {m.name ? <span className="text-neutral-400 mr-2">{m.name}:</span> : null}
-                    <div className={`${m.name ? '' : 'text-right'}`}>
-                      <span className={`inline-block px-2 py-1 rounded ${m.name ? 'bg-neutral-800 text-neutral-200' : 'bg-blue-600 text-white'}`}>{m.original}</span>
+            <ErrorBoundary>
+              <div className="space-y-3">
+                <div className="text-lg font-semibold">Chat</div>
+                <div className="h-96 overflow-auto rounded bg-neutral-900 p-3 space-y-2">
+                  {messages.map(m => (
+                    <div key={m.id} className="text-sm">
+                      {m.name ? <span className="text-neutral-400 mr-2">{m.name}:</span> : null}
+                      <div className={`${m.name ? '' : 'text-right'}`}>
+                        <span className={`inline-block px-2 py-1 rounded ${m.name ? 'bg-neutral-800 text-neutral-200' : 'bg-blue-600 text-white'}`}>{m.original}</span>
+                      </div>
+                      {m.translated && <div className="text-green-400">{m.translated}</div>}
                     </div>
-                    {m.translated && <div className="text-green-400">{m.translated}</div>}
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={`Message (${getLangLabel(lang)})`} className="px-3 py-2 rounded bg-neutral-800 w-full" />
+                  <button onClick={sendChat} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-500">Send</button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={`Message (${getLangLabel(lang)})`} className="px-3 py-2 rounded bg-neutral-800 w-full" />
-                <button onClick={sendChat} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-500">Send</button>
-              </div>
-            </div>
+            </ErrorBoundary>
           </div>
 
           {/* Bottom control bar */}

@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
+import { translateLimiter, getRateLimitKey, createRateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
+  // Rate limiting
+  const rateLimitKey = getRateLimitKey(req, 'translate');
+  const rateLimit = translateLimiter.isAllowed(rateLimitKey);
+  
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.resetTime!);
+  }
   let text: string = '';
   let targetLang: string = 'EN';
   try {
