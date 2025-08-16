@@ -42,6 +42,23 @@ if ! command -v docker-compose >/dev/null 2>&1; then
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
+# Install buildx plugin to avoid legacy builder warnings
+if ! docker buildx version >/dev/null 2>&1; then
+    log "Installing Docker Buildx for modern image building..."
+    # Try package manager first (Ubuntu/Debian)
+    if command -v apt >/dev/null 2>&1; then
+        sudo apt update && sudo apt install -y docker-buildx-plugin || true
+    fi
+    
+    # Enable buildx if available
+    if docker buildx version >/dev/null 2>&1; then
+        docker buildx install 2>/dev/null || true
+        log "✓ Docker Buildx enabled (BuildKit active)"
+    else
+        warn "Buildx installation failed - using legacy builder (still works fine)"
+    fi
+fi
+
 # Check Docker permissions and auto-fix
 if ! docker ps >/dev/null 2>&1; then
     if groups "$USER" | grep -q docker; then
@@ -79,12 +96,19 @@ else
     log "Using existing configuration: $ENV_FILE"
 fi
 
-# Build and start
+# Build and start using modern Docker Compose syntax
 log "Building SupiChat containers..."
-docker-compose -f docker-compose.prod.yml build --parallel
-
-log "Starting services..."
-docker-compose -f docker-compose.prod.yml up -d
+if docker compose version >/dev/null 2>&1; then
+    # Use modern docker compose (space, not hyphen)
+    docker compose -f docker-compose.prod.yml build --parallel
+    log "Starting services..."
+    docker compose -f docker-compose.prod.yml up -d
+else
+    # Fallback to legacy docker-compose
+    docker-compose -f docker-compose.prod.yml build --parallel
+    log "Starting services..."
+    docker-compose -f docker-compose.prod.yml up -d
+fi
 
 # Create management scripts
 log "Creating management scripts..."
@@ -92,31 +116,52 @@ log "Creating management scripts..."
 cat > start.sh <<'EOF'
 #!/bin/bash
 echo "🚀 Starting SupiChat..."
-docker-compose -f docker-compose.prod.yml up -d
-echo ""
-docker-compose -f docker-compose.prod.yml ps
+if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml up -d
+    echo ""
+    docker compose -f docker-compose.prod.yml ps
+else
+    docker-compose -f docker-compose.prod.yml up -d
+    echo ""
+    docker-compose -f docker-compose.prod.yml ps
+fi
 EOF
 
 cat > stop.sh <<'EOF'
 #!/bin/bash
 echo "🛑 Stopping SupiChat..."
-docker-compose -f docker-compose.prod.yml down
+if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml down
+else
+    docker-compose -f docker-compose.prod.yml down
+fi
 EOF
 
 cat > restart.sh <<'EOF'
 #!/bin/bash
 echo "🔄 Updating and restarting SupiChat..."
 git pull
-docker-compose -f docker-compose.prod.yml build --parallel
-docker-compose -f docker-compose.prod.yml up -d
-echo ""
-docker-compose -f docker-compose.prod.yml ps
+if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml build --parallel
+    docker compose -f docker-compose.prod.yml up -d
+    echo ""
+    docker compose -f docker-compose.prod.yml ps
+else
+    docker-compose -f docker-compose.prod.yml build --parallel
+    docker-compose -f docker-compose.prod.yml up -d
+    echo ""
+    docker-compose -f docker-compose.prod.yml ps
+fi
 EOF
 
 cat > logs.sh <<'EOF'
 #!/bin/bash
 echo "📋 SupiChat logs (Ctrl+C to exit):"
-docker-compose -f docker-compose.prod.yml logs -f
+if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml logs -f
+else
+    docker-compose -f docker-compose.prod.yml logs -f
+fi
 EOF
 
 cat > ssl-setup.sh <<'EOF'
@@ -139,10 +184,17 @@ sleep 5
 
 # Status check
 log "Container status:"
-docker-compose -f docker-compose.prod.yml ps
+if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml ps
+else
+    docker-compose -f docker-compose.prod.yml ps
+fi
 
 echo ""
 echo -e "${GREEN}🎉 SupiChat is now running!${NC}"
+if docker buildx version >/dev/null 2>&1; then
+    info "Using modern Docker BuildKit (no legacy warnings)"
+fi
 echo ""
 echo -e "${BLUE}📱 Access Methods:${NC}"
 
