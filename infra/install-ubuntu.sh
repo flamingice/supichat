@@ -75,6 +75,14 @@ pm2 start npm --name supichat-web -- start
 popd >/dev/null
 pm2 save
 pm2 status
+
+# Derive base path and host to print URL
+BASE_PATH=$(awk -F= '/^NEXT_PUBLIC_BASE_PATH=/{print $2}' apps/web/.env.local 2>/dev/null | head -1)
+[ -n "$BASE_PATH" ] || BASE_PATH="/supichat"
+HOST=${SUPICHAT_HOST:-$(curl -fsS ifconfig.me || curl -fsS https://api.ipify.org || hostname -I | awk '{print $1}' || echo localhost)}
+echo
+echo "SupiChat URL:  http://$HOST:3000$BASE_PATH"
+echo "Signaling:    http://$HOST:4001/health"
 EOS
 chmod +x start.sh
 
@@ -92,6 +100,7 @@ cat > restart.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
 pushd apps/web >/dev/null
+npm run build
 pm2 restart supichat-web || pm2 start npm --name supichat-web -- start
 popd >/dev/null
 
@@ -99,6 +108,14 @@ pushd services/signaling >/dev/null
 pm2 restart supichat-signaling || pm2 start server.js --name supichat-signaling --update-env
 popd >/dev/null
 pm2 save
+
+# Derive base path and host to print URL
+BASE_PATH=$(awk -F= '/^NEXT_PUBLIC_BASE_PATH=/{print $2}' apps/web/.env.local 2>/dev/null | head -1)
+[ -n "$BASE_PATH" ] || BASE_PATH="/supichat"
+HOST=${SUPICHAT_HOST:-$(curl -fsS ifconfig.me || curl -fsS https://api.ipify.org || hostname -I | awk '{print $1}' || echo localhost)}
+echo
+echo "SupiChat URL:  http://$HOST:3000$BASE_PATH"
+echo "Signaling:    http://$HOST:4001/health"
 EOS
 chmod +x restart.sh
 
