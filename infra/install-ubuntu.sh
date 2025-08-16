@@ -148,6 +148,11 @@ WEB_PORT=${WEB_PORT:-3000}
 SIGNALING_PORT=${SIGNALING_PORT:-4001}
 BASE_PATH=${BASE_PATH:-/supichat}
 
+# Ensure nginx is running
+if ! systemctl is-active --quiet nginx; then
+  (sudo systemctl start nginx || true)
+fi
+
 run_pm2() {
   if [ "$(id -u)" = "0" ] && [ -n "$RUN_AS" ] && [ "$RUN_AS" != "root" ]; then
     sudo -u "$RUN_AS" -H pm2 "$@"
@@ -171,9 +176,12 @@ run_pm2 save
 run_pm2 status
 
 HOST=${SUPICHAT_HOST:-$(curl -fsS ifconfig.me || curl -fsS https://api.ipify.org || hostname -I | awk '{print $1}' || echo localhost)}
-echo
-echo "SupiChat URL:  http://$HOST:${WEB_PORT}$BASE_PATH"
+
+echo "\nSupiChat URL:  http://$HOST:${WEB_PORT}$BASE_PATH"
 echo "Signaling:    http://$HOST:${SIGNALING_PORT}/health"
+
+# Optional service check
+[ -x ./check-services.sh ] && ./check-services.sh || true
 EOS
 chmod +x start.sh
 
@@ -196,6 +204,11 @@ RUN_AS=${RUN_AS_USER:-}
 WEB_PORT=${WEB_PORT:-3000}
 SIGNALING_PORT=${SIGNALING_PORT:-4001}
 BASE_PATH=${BASE_PATH:-/supichat}
+
+# Ensure nginx is running
+if ! systemctl is-active --quiet nginx; then
+  (sudo systemctl start nginx || true)
+fi
 
 run_pm2() {
   if [ "$(id -u)" = "0" ] && [ -n "$RUN_AS" ] && [ "$RUN_AS" != "root" ]; then
@@ -224,9 +237,12 @@ popd >/dev/null
 run_pm2 save
 
 HOST=${SUPICHAT_HOST:-$(curl -fsS ifconfig.me || curl -fsS https://api.ipify.org || hostname -I | awk '{print $1}' || echo localhost)}
-echo
-echo "SupiChat URL:  http://$HOST:${WEB_PORT}$BASE_PATH"
+
+echo "\nSupiChat URL:  http://$HOST:${WEB_PORT}$BASE_PATH"
 echo "Signaling:    http://$HOST:${SIGNALING_PORT}/health"
+
+# Optional service check
+[ -x ./check-services.sh ] && ./check-services.sh || true
 EOS
 chmod +x restart.sh
 
