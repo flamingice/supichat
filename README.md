@@ -214,23 +214,56 @@ Notes:
   ```
   Ensure `TURN_SECRET` is set in `.env`.
 
-## Deployment
+## Production Deployment
 
-For production deployment, see the Docker configuration in the `infra/` directory and consider enabling TURN on a VPS or using a managed TURN service. For bare-VM installs, run `bash infra/install-ubuntu.sh`, then `./start.sh`. After `git pull`, run `./restart.sh`.
+### Docker (Recommended) 🐳
 
-### Production (Linux)
-- Use the Nginx example in `infra/nginx.conf`:
-  - Preserve the basePath by removing the trailing slash on `proxy_pass` (use `http://127.0.0.1:3000` not `.../`).
-  - Add `location = /supichat { return 301 /supichat/; }` to avoid slash-redirect loops.
-  - Keep websocket headers and longer timeouts under `/supichat/socket.io/`.
-- Build web: `npm run build -w apps/web`
-- Start with PM2 using Next.js standalone if present:
-  - `.next/standalone/server.js` is preferred (scripts updated to auto-detect).
-- Ensure env:
-  - `NEXT_PUBLIC_BASE_PATH=/supichat`
-  - `NEXT_PUBLIC_SIGNALING_PATH=/supichat/socket.io`
-- Translation:
-  - Set `DEEPL_API_KEY` to enable translations. If unset, `/api/translate` returns an empty result and smoke test skips translation.
+**Cleanest, most secure, and zero-dependency deployment:**
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER  # Log out and back in
+
+# Deploy SupiChat
+git clone https://github.com/yourusername/supichat.git
+cd supichat
+bash infra/install-docker.sh
+```
+
+**Benefits:** Isolated environment, automatic user security, no Node.js installation required, easy updates.
+
+### systemd (Traditional) ⚙️
+
+**For traditional bare-metal server deployments:**
+
+```bash
+# Install Node.js 18+ first
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Deploy SupiChat
+git clone https://github.com/yourusername/supichat.git
+cd supichat
+bash infra/install-systemd.sh
+```
+
+**Benefits:** Native systemd integration, traditional service management, system-level logging.
+
+### PM2 (Legacy) 📦
+
+**Deprecated but still available:**
+
+```bash
+bash infra/install-ubuntu.sh  # Legacy PM2-based installer
+```
+
+---
+
+### Configuration Notes
+- Set `DEEPL_API_KEY` for translations
+- Configure nginx reverse proxy (see `infra/nginx.conf`)
+- Consider TURN server for better NAT traversal
 
 HTTPS (domain or IP)
 - Run interactive HTTPS setup: `sudo bash infra/setup-https.sh your.domain` or your server IP.
