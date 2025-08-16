@@ -219,7 +219,8 @@ Notes:
 For production deployment, see the Docker configuration in the `infra/` directory and consider enabling TURN on a VPS or using a managed TURN service. For bare-VM installs, run `bash infra/install-ubuntu.sh`, then `./start.sh`. After `git pull`, run `./restart.sh`.
 
 HTTPS (domain or IP)
-- Run interactive HTTPS setup: `sudo bash infra/setup-https.sh your.domain` or your server IP. For IP certificates, Let’s Encrypt recently enabled issuance; they are short-lived (~6 days) and the script installs a systemd timer to renew every 5 days. See the Let’s Encrypt announcement for details: [Let’s Encrypt – We’ve Issued Our First IP Address Certificate](https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate).
+- Run interactive HTTPS setup: `sudo bash infra/setup-https.sh your.domain` or your server IP.
+- For IP certificates, Let’s Encrypt has announced short‑lived IP certs (~6 days). Not all ACME clients (e.g. certbot) may fully support them yet. The script will attempt issuance; if unsupported, it offers a self‑signed fallback and leaves a renewal timer only when an LE IP cert is present. See: [Let’s Encrypt – We’ve Issued Our First IP Address Certificate](https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate).
 
 ## License
 

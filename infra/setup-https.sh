@@ -11,7 +11,7 @@ HOST="${1:-}"
 if [ -z "$HOST" ]; then echo "Usage: $0 <domain-or-ip>"; exit 1; fi
 
 apt-get update -y
-apt-get install -y nginx certbot python3-certbot-nginx
+apt-get install -y nginx certbot python3-certbot-nginx openssl
 
 mkdir -p /var/www/certbot
 
@@ -115,7 +115,53 @@ TMR
     systemctl daemon-reload
     systemctl enable --now supichat-ip-renew.timer
   else
-    echo "Warning: IP certificate not found at $CRT_DIR. The feature may require updated ACME client support per Let's Encrypt guidance."
+    echo "\nWarning: IP certificate not found at $CRT_DIR."
+    echo "This likely means your ACME client (certbot) does not yet support IP certificates with the short-lived profile."
+    echo "See: https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate"
+
+    read -r -p "Generate a self-signed certificate for $HOST instead? [y/N]: " SS || true
+    if [[ "${SS,,}" == "y" ]]; then
+      mkdir -p /etc/ssl/supichat
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout /etc/ssl/supichat/selfsigned.key \
+        -out /etc/ssl/supichat/selfsigned.crt \
+        -subj "/CN=$HOST" >/dev/null 2>&1
+
+      cat >/etc/nginx/sites-available/supichat <<NGINX
+server { listen 80; server_name $HOST; location /.well-known/acme-challenge/ { root /var/www/certbot; } return 301 https://\$host\$request_uri; }
+
+server {
+  listen 443 ssl;
+  server_name $HOST;
+  ssl_certificate /etc/ssl/supichat/selfsigned.crt;
+  ssl_certificate_key /etc/ssl/supichat/selfsigned.key;
+
+  location /supichat/ {
+    proxy_pass http://127.0.0.1:3000/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+  }
+
+  location /supichat/socket.io/ {
+    proxy_pass http://127.0.0.1:4001/supichat/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+  }
+}
+NGINX
+      nginx -t && systemctl reload nginx
+      echo "Self-signed HTTPS configured. Modern browsers will show a warning until you trust the cert."
+      echo "When Let's Encrypt IP certs are fully supported by your client, re-run this script to switch."
+    else
+      echo "Keeping HTTP-only for now. You can run this script later with a domain or after client updates."
+      exit 2
+    fi
   fi
 else
   certbot --nginx -d "$HOST"
