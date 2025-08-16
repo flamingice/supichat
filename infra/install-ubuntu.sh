@@ -173,8 +173,15 @@ PORT="$SIGNALING_PORT" run_pm2 start server.js --name supichat-signaling --updat
 popd >/dev/null
 
 pushd apps/web >/dev/null
-if [ -f .next/standalone/server.js ]; then
-  PORT="$WEB_PORT" run_pm2 start .next/standalone/server.js --name supichat-web --update-env
+STANDALONE_SERVER=""
+if compgen -G ".next/standalone/*/server.js" > /dev/null; then
+  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
+elif [ -f ".next/standalone/server.js" ]; then
+  STANDALONE_SERVER=".next/standalone/server.js"
+fi
+
+if [ -n "$STANDALONE_SERVER" ]; then
+  PORT="$WEB_PORT" run_pm2 start "$STANDALONE_SERVER" --name supichat-web --update-env
 elif [ -x node_modules/.bin/next ]; then
   run_pm2 start node_modules/next/dist/bin/next --name supichat-web -- start -p "$WEB_PORT"
 else
@@ -229,9 +236,16 @@ run_pm2() {
 
 pushd apps/web >/dev/null
 npm run build
-if [ -f .next/standalone/server.js ]; then
+STANDALONE_SERVER=""
+if compgen -G ".next/standalone/*/server.js" > /dev/null; then
+  STANDALONE_SERVER=$(ls -1 .next/standalone/*/server.js | head -n1)
+elif [ -f ".next/standalone/server.js" ]; then
+  STANDALONE_SERVER=".next/standalone/server.js"
+fi
+
+if [ -n "$STANDALONE_SERVER" ]; then
   if ! run_pm2 restart supichat-web; then
-    PORT="$WEB_PORT" run_pm2 start .next/standalone/server.js --name supichat-web --update-env
+    PORT="$WEB_PORT" run_pm2 start "$STANDALONE_SERVER" --name supichat-web --update-env
   fi
 else
   if ! run_pm2 restart supichat-web; then
