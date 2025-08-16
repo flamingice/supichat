@@ -232,4 +232,15 @@ chmod +x restart.sh
 
 echo "Done. Use ./start.sh to launch, ./restart.sh after a git pull, and ./stop.sh to stop."
 
+ANS=$(prompt "Run HTTPS setup now (nginx + certbot)?" "n")
+if [ "${ANS,,}" = "y" ]; then
+  HOST=$(prompt "Enter domain or IP for HTTPS" "")
+  if [ -n "$HOST" ]; then
+    echo "Running HTTPS setup for $HOST ..."
+    sudo bash infra/setup-https.sh "$HOST"
+  else
+    echo "Skipped: no host provided."
+  fi
+fi
+
 
