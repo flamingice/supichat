@@ -43,8 +43,12 @@ if ! command -v node >/dev/null 2>&1; then
   sudo apt-get install -y nodejs build-essential
 fi
 
-echo "Installing pnpm (optional) and pm2..."
-npm install -g pm2 >/dev/null 2>&1 || sudo npm install -g pm2
+# Ensure node/npm are executable for all users (avoid EACCES for non-root pm2)
+if [ -x /usr/bin/node ]; then sudo chmod 755 /usr/bin/node || true; fi
+if [ -x /usr/bin/npm ]; then sudo chmod 755 /usr/bin/npm || true; fi
+
+echo "Installing pm2 globally..."
+sudo npm install -g pm2 || npm install -g pm2
 
 echo "Installing workspace dependencies..."
 npm ci || npm install
@@ -124,6 +128,8 @@ if [ "$(id -u)" = "0" ] && [ "$RUN_AS_USER" != "root" ]; then
     echo "Creating user $RUN_AS_USER ..."; useradd -m -s /bin/bash "$RUN_AS_USER"
   fi
   chown -R "$RUN_AS_USER":"$RUN_AS_USER" .
+  # Ensure pm2 is installed for that user environment
+  sudo -u "$RUN_AS_USER" -H pm2 -v >/dev/null 2>&1 || sudo -u "$RUN_AS_USER" -H npm install -g pm2 || true
 fi
 
 # Save runtime config
@@ -155,9 +161,10 @@ fi
 
 run_pm2() {
   if [ "$(id -u)" = "0" ] && [ -n "$RUN_AS" ] && [ "$RUN_AS" != "root" ]; then
-    sudo -u "$RUN_AS" -H pm2 "$@"
+    # Ensure node path for target user
+    sudo -u "$RUN_AS" -H env PATH="/usr/bin:/usr/local/bin:$PATH" pm2 "$@"
   else
-    pm2 "$@"
+    env PATH="/usr/bin:/usr/local/bin:$PATH" pm2 "$@"
   fi
 }
 
