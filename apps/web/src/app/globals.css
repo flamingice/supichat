@@ -5,6 +5,23 @@
 :root { color-scheme: dark; }
 body { @apply bg-neutral-950 text-neutral-100; }
 
+/* Design tokens */
+:root{
+  --accent:#5B9BFF;
+  --success:#34C759;
+  --warning:#FFB020;
+  --error:#FF5A52;
+  --canvas:#0F1115;
+}
+
+.glass{ @apply bg-neutral-900/60 backdrop-blur border border-white/10 rounded-xl; }
+.tile{ @apply rounded-2xl border border-white/10 bg-neutral-900/40; }
+.pill{ @apply rounded-full px-3 py-1 border border-white/10; }
+.btn{ @apply inline-flex items-center justify-center h-11 px-4 rounded-xl border border-white/10 bg-neutral-800 hover:bg-neutral-700 transition; }
+.btn-accent{ background: var(--accent); color: #0b0d12; }
+.btn-danger{ background: color-mix(in oklab, var(--error) 20%, black); color: #ffdede; }
+.badge{ @apply text-xs px-2 py-0.5 rounded bg-white/10 border border-white/10; }
+
 
 
 
