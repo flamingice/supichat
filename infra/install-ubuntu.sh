@@ -173,7 +173,9 @@ PORT="$SIGNALING_PORT" run_pm2 start server.js --name supichat-signaling --updat
 popd >/dev/null
 
 pushd apps/web >/dev/null
-if [ -x node_modules/.bin/next ]; then
+if [ -f .next/standalone/server.js ]; then
+  PORT="$WEB_PORT" run_pm2 start .next/standalone/server.js --name supichat-web --update-env
+elif [ -x node_modules/.bin/next ]; then
   run_pm2 start node_modules/next/dist/bin/next --name supichat-web -- start -p "$WEB_PORT"
 else
   run_pm2 start npm --name supichat-web -- start
@@ -227,11 +229,17 @@ run_pm2() {
 
 pushd apps/web >/dev/null
 npm run build
-if ! run_pm2 restart supichat-web; then
-  if [ -x node_modules/.bin/next ]; then
-    run_pm2 start node_modules/next/dist/bin/next --name supichat-web -- start -p "$WEB_PORT"
-  else
-    run_pm2 start npm --name supichat-web -- start
+if [ -f .next/standalone/server.js ]; then
+  if ! run_pm2 restart supichat-web; then
+    PORT="$WEB_PORT" run_pm2 start .next/standalone/server.js --name supichat-web --update-env
+  fi
+else
+  if ! run_pm2 restart supichat-web; then
+    if [ -x node_modules/.bin/next ]; then
+      run_pm2 start node_modules/next/dist/bin/next --name supichat-web -- start -p "$WEB_PORT"
+    else
+      run_pm2 start npm --name supichat-web -- start
+    fi
   fi
 fi
 popd >/dev/null
