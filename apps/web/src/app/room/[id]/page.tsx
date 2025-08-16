@@ -67,6 +67,16 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     (async () => {
       try {
+        const isE2E = typeof location !== 'undefined' && new URLSearchParams(location.search).get('e2e') === '1';
+        if (isE2E) {
+          setLocalMicEnabled(true);
+          setLocalCamEnabled(true);
+          setMics([{ deviceId: 'e2e-mic', kind: 'audioinput', label: 'E2E Mic' } as any]);
+          setCams([{ deviceId: 'e2e-cam', kind: 'videoinput', label: 'E2E Cam' } as any]);
+          setSpeakers([{ deviceId: 'e2e-spk', kind: 'audiooutput', label: 'E2E Speaker' } as any]);
+          setReady(true);
+          return;
+        }
         const constraints: MediaStreamConstraints = { video: true, audio: true };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setLocalStream(stream);
@@ -424,8 +434,8 @@ export default function RoomPage({ params }: { params: { id: string } }) {
           {/* Bottom control bar */}
           <div className="fixed bottom-4 left-0 right-0 pointer-events-none">
             <div className="pointer-events-auto mx-auto w-fit glass px-3 py-2 rounded-2xl flex items-center gap-2" style={{height:68}}>
-              <button onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`} title="Mic">{localMicEnabled?'🎤':'🔇'}</button>
-              <button onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`} title="Camera">{localCamEnabled?'📷':'🚫📷'}</button>
+              <button data-testid="toggle-mic" onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`} title="Mic">{localMicEnabled?'🎤':'🔇'}</button>
+              <button data-testid="toggle-cam" onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`} title="Camera">{localCamEnabled?'📷':'🚫📷'}</button>
               <button data-testid="share" className="btn" title="Share screen" disabled>🖥️</button>
               <button data-testid="open-chat" onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} className="btn" title="Chat">💬{unread>0?<span className="badge ml-1">{unread}</span>:null}</button>
               <button data-testid="open-people" onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} className="btn" title="People">👥<span className="badge ml-1">{1+peers.length}</span></button>
@@ -436,7 +446,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
           {/* Right sidebar drawer */}
           {sidebarOpen ? (
-            <div className="fixed top-0 right-0 h-full w-[380px] glass p-3 space-y-3">
+            <div data-testid="drawer" className="fixed top-0 right-0 h-full w-[380px] glass p-3 space-y-3 overflow-auto">
               <div className="flex items-center justify-between">
                 <div className="flex gap-2 text-sm">
                   <button className={`pill ${sidebarTab==='people'?'bg-white/10':''}`} onClick={()=>setSidebarTab('people')}>People</button>
@@ -478,7 +488,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                     ))}
                   </div>
                   <div className="mt-2 flex gap-2">
-                    <input data-testid="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder={`Message (auto-translated to ${getLangLabel(lang)})`} />
+                    <input data-testid="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } }} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder={`Message (auto-translated to ${getLangLabel(lang)})`} />
                     <button data-testid="chat-send" onClick={sendChat} className="btn">➤</button>
                   </div>
                 </div>
