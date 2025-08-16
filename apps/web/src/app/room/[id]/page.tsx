@@ -291,7 +291,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       <div className="glass flex items-center justify-between px-3 py-2" style={{height:56}}>
         <div className="flex items-center gap-3">
           <div className="font-semibold tracking-wide">Room {roomId}</div>
-          <button onClick={copyInvite} className="pill hover:bg-white/10" title="Copy link">🔗 Copy</button>
+          <button data-testid="copy-link" onClick={copyInvite} className="pill hover:bg-white/10" title="Copy link">🔗 Copy</button>
           {copied ? <span className="text-xs text-green-400">Copied</span> : null}
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-300">
@@ -321,46 +321,46 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             ) : null}
             <div className="space-y-1">
               <div className="text-sm text-neutral-300">Your name</div>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder="e.g., Alex" />
+              <input data-testid="name" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder="e.g., Alex" />
             </div>
             <div className="space-y-1">
               <div className="text-sm text-neutral-300">My chat language</div>
-              <select value={lang} onChange={e => setLang(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
+              <select data-testid="lang" value={lang} onChange={e => setLang(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
                 {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
               </select>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <div className="space-y-1">
                 <div className="text-sm text-neutral-300">Microphone</div>
-                <select value={micId} onChange={e => setMicId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
+                <select data-testid="mic-device" value={micId} onChange={e => setMicId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
                   {mics.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Microphone'}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
                 <div className="text-sm text-neutral-300">Camera</div>
-                <select value={camId} onChange={e => setCamId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
+                <select data-testid="cam-device" value={camId} onChange={e => setCamId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
                   {cams.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Camera'}</option>)}
                 </select>
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-neutral-300">Speaker</div>
-              <select value={speakerId} onChange={e => setSpeakerId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
+              <select data-testid="spk-device" value={speakerId} onChange={e => setSpeakerId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
                 {speakers.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Speaker'}</option>)}
               </select>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`}>{localMicEnabled ? '🎤 Mic on' : '🔇 Mic off'}</button>
-              <button onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`}>{localCamEnabled ? '📷 Cam on' : '🚫📷 Cam off'}</button>
+              <button data-testid="toggle-mic" onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`}>{localMicEnabled ? '🎤 Mic on' : '🔇 Mic off'}</button>
+              <button data-testid="toggle-cam" onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`}>{localCamEnabled ? '📷 Cam on' : '🚫📷 Cam off'}</button>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-neutral-300">Room link</div>
               <div className="flex gap-2">
-                <input readOnly className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" value={`${typeof location!=='undefined'?location.origin:''}${BASE_PATH}/room/${roomId}`} />
-                <button onClick={copyInvite} className="btn">Copy</button>
+                <input data-testid="room-link" readOnly className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" value={`${typeof location!=='undefined'?location.origin:''}${BASE_PATH}/room/${roomId}`} />
+                <button data-testid="copy-room-link" onClick={copyInvite} className="btn">Copy</button>
               </div>
             </div>
-            <button onClick={joinRoom} disabled={!ready || !name} className="btn btn-accent w-full disabled:opacity-50">Join now</button>
+            <button data-testid="join-btn" onClick={joinRoom} disabled={!ready || !name} className="btn btn-accent w-full disabled:opacity-50">Join now</button>
             <div className="text-xs text-neutral-400">Grant access to your camera and microphone to join.</div>
           </div>
         </div>
@@ -426,9 +426,9 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             <div className="pointer-events-auto mx-auto w-fit glass px-3 py-2 rounded-2xl flex items-center gap-2" style={{height:68}}>
               <button onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`} title="Mic">{localMicEnabled?'🎤':'🔇'}</button>
               <button onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`} title="Camera">{localCamEnabled?'📷':'🚫📷'}</button>
-              <button className="btn" title="Share screen" disabled>🖥️</button>
-              <button onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} className="btn" title="Chat">💬{unread>0?<span className="badge ml-1">{unread}</span>:null}</button>
-              <button onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} className="btn" title="People">👥<span className="badge ml-1">{1+peers.length}</span></button>
+              <button data-testid="share" className="btn" title="Share screen" disabled>🖥️</button>
+              <button data-testid="open-chat" onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} className="btn" title="Chat">💬{unread>0?<span className="badge ml-1">{unread}</span>:null}</button>
+              <button data-testid="open-people" onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} className="btn" title="People">👥<span className="badge ml-1">{1+peers.length}</span></button>
               <button onClick={() => setSidebarOpen(true)} className="btn" title="Settings">⚙</button>
               <button onClick={leaveRoom} className="btn btn-danger" title="Leave">Leave</button>
             </div>
@@ -460,21 +460,26 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                 </div>
               ) : (
                 <div className="flex flex-col h-full">
-                  <div className="text-sm text-neutral-400 mb-2">Messages auto-translate to your language</div>
-                  <div className="flex-1 overflow-auto space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm text-neutral-400">Messages auto-translate</div>
+                    <select data-testid="viewer-lang" value={lang} onChange={e=>setLang(e.target.value)} className="px-2 py-1 rounded bg-neutral-800 border border-white/10 text-sm">
+                      {LANGS.map(l => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                  <div data-testid="chat-list" className="flex-1 overflow-auto space-y-2">
                     {messages.map(m => (
-                      <div key={m.id} className="text-sm tile p-2">
+                      <div key={m.id} data-testid="msg" data-author={m.name ? 'peer' : 'self'} className="text-sm tile p-2">
                         <div className="text-xs text-neutral-400">{m.name || 'You'}</div>
                         {m.translated ? (
-                          <div className="text-[15px] text-neutral-100">{m.translated}</div>
+                          <div className="text-[15px] text-neutral-100" data-translated>{m.translated}</div>
                         ) : null}
-                        <div className="text-xs text-neutral-400">Original: {m.original}</div>
+                        <div className="text-xs text-neutral-400" data-original>Original: {m.original}</div>
                       </div>
                     ))}
                   </div>
                   <div className="mt-2 flex gap-2">
-                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder={`Message (auto-translated to ${getLangLabel(lang)})`} />
-                    <button onClick={sendChat} className="btn">➤</button>
+                    <input data-testid="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder={`Message (auto-translated to ${getLangLabel(lang)})`} />
+                    <button data-testid="chat-send" onClick={sendChat} className="btn">➤</button>
                   </div>
                 </div>
               )}
