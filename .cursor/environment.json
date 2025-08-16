@@ -1,0 +1,11 @@
+{
+  "snapshot": "POPULATED_FROM_SETTINGS",
+  "install": "npm ci && npm --workspace services/signaling ci",
+  "start": "",
+  "terminals": [
+    { "name": "Web", "command": "npm run dev -w apps/web" },
+    { "name": "Signaling", "command": "node services/signaling/server.js" }
+  ]
+}
+
+
