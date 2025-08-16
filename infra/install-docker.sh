@@ -97,7 +97,7 @@ else
 fi
 
 # Build and start using modern Docker Compose syntax
-log "Building SupiChat containers..."
+log "Building SupiChat containers (with latest npm)..."
 if docker compose version >/dev/null 2>&1; then
     # Use modern docker compose (space, not hyphen)
     docker compose -f docker-compose.prod.yml build --parallel
