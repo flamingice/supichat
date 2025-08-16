@@ -3,24 +3,97 @@
 @tailwind utilities;
 
 :root { color-scheme: dark; }
-body { @apply bg-neutral-950 text-neutral-100; }
+body { @apply bg-gray-900 text-white; }
 
-/* Design tokens */
+/* Meet/Zoom inspired design tokens */
 :root{
-  --accent:#5B9BFF;
-  --success:#34C759;
-  --warning:#FFB020;
-  --error:#FF5A52;
-  --canvas:#0F1115;
+  --accent: #1a73e8;
+  --accent-hover: #1557b0;
+  --success: #34a853;
+  --warning: #fbbc04;
+  --error: #ea4335;
+  --surface: #202124;
+  --surface-variant: #3c4043;
+  --on-surface: #e8eaed;
+  --outline: #5f6368;
 }
 
-.glass{ @apply bg-neutral-900/60 backdrop-blur border border-white/10 rounded-xl; }
-.tile{ @apply rounded-2xl border border-white/10 bg-neutral-900/40; }
-.pill{ @apply rounded-full px-3 py-1 border border-white/10; }
-.btn{ @apply inline-flex items-center justify-center h-11 px-4 rounded-xl border border-white/10 bg-neutral-800 hover:bg-neutral-700 transition; }
-.btn-accent{ background: var(--accent); color: #0b0d12; }
-.btn-danger{ background: color-mix(in oklab, var(--error) 20%, black); color: #ffdede; }
-.badge{ @apply text-xs px-2 py-0.5 rounded bg-white/10 border border-white/10; }
+/* Meet-style components */
+.meet-surface { @apply bg-gray-800 border border-gray-700; }
+.meet-card { @apply bg-gray-800 rounded-lg border border-gray-600 shadow-lg; }
+.meet-pill { @apply rounded-full px-3 py-1 text-xs font-medium bg-gray-700 text-gray-200 border border-gray-600; }
+.meet-btn { 
+  @apply inline-flex items-center justify-center h-10 px-4 rounded-lg font-medium transition-all duration-200;
+  @apply bg-gray-700 hover:bg-gray-600 text-white border border-gray-600;
+}
+.meet-btn-primary { 
+  @apply bg-blue-600 hover:bg-blue-700 text-white border-blue-500;
+}
+.meet-btn-danger { 
+  @apply bg-red-600 hover:bg-red-700 text-white border-red-500;
+}
+.meet-btn-icon {
+  @apply w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200;
+  @apply bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white;
+}
+.meet-btn-icon.active { @apply bg-blue-600 border-blue-500; }
+.meet-btn-icon.danger { @apply bg-red-600 hover:bg-red-700 border-red-500; }
+.meet-btn-icon.disabled { @apply bg-gray-800 text-gray-500 cursor-not-allowed; }
+
+/* Video grid styles */
+.video-grid {
+  @apply grid gap-2;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.video-tile {
+  @apply relative bg-gray-900 rounded-lg overflow-hidden;
+  aspect-ratio: 16/9;
+}
+.video-tile video {
+  @apply w-full h-full object-cover;
+}
+.video-overlay {
+  @apply absolute inset-0 pointer-events-none;
+}
+.video-name {
+  @apply absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded;
+}
+
+/* Control bar */
+.control-bar {
+  @apply fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-3;
+  @apply bg-gray-800 rounded-full px-4 py-3 border border-gray-600 shadow-2xl;
+}
+
+/* Chat styles */
+.chat-container {
+  @apply bg-gray-800 border-l border-gray-600 h-full flex flex-col;
+}
+.chat-message {
+  @apply bg-gray-700 rounded-lg p-3 max-w-xs;
+}
+.chat-message.own {
+  @apply bg-blue-600 ml-auto;
+}
+
+/* Input styles */
+.meet-input {
+  @apply w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+.meet-select {
+  @apply w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+/* Legacy support */
+.glass{ @apply meet-card backdrop-blur; }
+.tile{ @apply meet-card; }
+.pill{ @apply meet-pill; }
+.btn{ @apply meet-btn; }
+.btn-accent{ @apply meet-btn-primary; }
+.btn-danger{ @apply meet-btn-danger; }
+.badge{ @apply meet-pill; }
 
 
 

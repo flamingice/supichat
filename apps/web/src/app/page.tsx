@@ -36,23 +36,77 @@ export default function HomePage() {
 
   return (
     <ErrorBoundary>
-      <main className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="tile p-4 flex flex-col gap-3 justify-center items-center min-h-56">
-          <h1 className="text-2xl font-semibold">SupiChat</h1>
-          <p className="text-neutral-300 text-center max-w-xl">Minimal video chat with auto-translating messages. Share the link, pick your language, and start talking.</p>
-          <button onClick={createRoom} disabled={creating} className="btn btn-accent disabled:opacity-50">
-            {creating ? 'Creating…' : 'Start a room'}
-          </button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-4xl w-full">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-light text-white mb-4">SupiChat</h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Premium video conferencing with real-time translation. 
+              Connect globally, communicate naturally.
+            </p>
+          </div>
+
+          {/* Main card */}
+          <div className="meet-card p-8 max-w-md mx-auto text-center">
+            <div className="mb-8">
+              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-medium text-white mb-2">Ready to connect?</h2>
+              <p className="text-gray-400">
+                Start a new meeting and invite others to join your conversation.
+              </p>
+            </div>
+
+            <button 
+              onClick={createRoom} 
+              disabled={creating} 
+              className="meet-btn-primary w-full text-lg py-3 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creating ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Creating room...
+                </div>
+              ) : (
+                'New meeting'
+              )}
+            </button>
+
+            <div className="border-t border-gray-600 pt-6">
+              <h3 className="text-sm font-medium text-gray-300 mb-3">Key features</h3>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                  Real-time translation
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                  HD video & audio
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                  Secure & private
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center mt-8 text-gray-500 text-sm">
+            No downloads required • Works in your browser
+          </div>
         </div>
-        <div className="tile p-4">
-          <div className="text-sm text-neutral-300 mb-2">How it works</div>
-          <ul className="list-disc ml-6 space-y-1 text-neutral-300">
-            <li>Create a room and share the link</li>
-            <li>Allow mic/camera and pick your language</li>
-            <li>Messages auto-translate for the reader</li>
-          </ul>
-        </div>
-      </main>
+      </div>
     </ErrorBoundary>
   );
 }

@@ -301,104 +301,253 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Top bar inside room */}
-      <div className="glass flex items-center justify-between px-3 py-2" style={{height:56}}>
-        <div className="flex items-center gap-3">
-          <div className="font-semibold tracking-wide">Room {roomId}</div>
-          <button data-testid="copy-link" onClick={copyInvite} className="pill hover:bg-white/10" title="Copy link">🔗 Copy</button>
-          {copied ? <span className="text-xs text-green-400">Copied</span> : null}
+    <div className="h-screen flex flex-col bg-gray-900">
+      {/* Top navigation bar */}
+      <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium text-white">SupiChat</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <span className="bg-gray-700 px-2 py-1 rounded text-xs">{roomId}</span>
+            <button 
+              data-testid="copy-link" 
+              onClick={copyInvite} 
+              className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+              title="Copy meeting link"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+              </svg>
+              Copy link
+            </button>
+            {copied && <span className="text-green-400 text-xs">Copied!</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-neutral-300">
-          <span className="badge">{1 + peers.length} people</span>
-          <button onClick={() => setSidebarOpen(s => !s)} className="pill hover:bg-white/10">⚙ Settings</button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+            </svg>
+            <span>{1 + peers.length} participants</span>
+          </div>
+          <button 
+            onClick={() => setSidebarOpen(s => !s)} 
+            className="meet-btn text-sm"
+            title="Meeting details"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+            </svg>
+          </button>
         </div>
       </div>
 
       {!joined ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="tile p-3 relative">
-            <VideoErrorBoundary>
-              <div className="aspect-video bg-black rounded-xl overflow-hidden">
-                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                {!localCamEnabled ? (<div className="absolute inset-0 flex items-center justify-center text-neutral-400">🚫📷</div>) : null}
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Video preview */}
+            <div className="flex flex-col items-center">
+              <VideoErrorBoundary>
+                <div className="video-tile w-full max-w-md mb-4">
+                  <video 
+                    ref={localVideoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    className="w-full h-full object-cover" 
+                  />
+                  {!localCamEnabled && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                      <div className="text-center">
+                        <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M21 6.5l-4 4V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11z"/>
+                          <path d="M2 2l20 20" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                        <p className="text-gray-400 text-sm">Camera off</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="video-name">You</div>
+                  {/* Mic level indicator */}
+                  {localMicEnabled && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/70 px-2 py-1 rounded">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path d="M10 2C5.03 2 1 6.03 1 11s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zM7 7l6 6M7 13l6-6"/>
+                      </svg>
+                      <div className="w-8 h-1 bg-gray-600 rounded-full overflow-hidden">
+                        <div 
+                          className="h-1 bg-green-500 transition-all" 
+                          style={{ width: `${Math.min(100, Math.max(4, micLevel/2))}%` }} 
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </VideoErrorBoundary>
+              
+              {/* Media controls */}
+              <div className="flex gap-3 mb-6">
+                <button 
+                  data-testid="toggle-mic" 
+                  onClick={() => toggleTrack('audio')} 
+                  className={`meet-btn-icon ${localMicEnabled ? '' : 'danger'}`}
+                  title={localMicEnabled ? 'Mute microphone' : 'Unmute microphone'}
+                >
+                  {localMicEnabled ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5z" clipRule="evenodd"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.22 2.22a.75.75 0 011.06 0L6.56 5.5H9a.75.75 0 010 1.5H8.06l3.94 3.94V14a.75.75 0 01-1.5 0v-2.44l-6.28-6.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                </button>
+                <button 
+                  data-testid="toggle-cam" 
+                  onClick={() => toggleTrack('video')} 
+                  className={`meet-btn-icon ${localCamEnabled ? '' : 'danger'}`}
+                  title={localCamEnabled ? 'Turn off camera' : 'Turn on camera'}
+                >
+                  {localCamEnabled ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M21 6.5l-4 4V7a1 1 0 00-1-1H9.83l8.17 8.17v-7.67zM3.83 2L2 3.83 4.02 5.85C4.01 5.9 4 5.95 4 6v10c0 .55.45 1 1 1h12c.05 0 .1-.01.15-.02L20 19.83 21.83 18 3.83 2z"/>
+                    </svg>
+                  )}
+                </button>
               </div>
-              {/* mic level */}
-              <div className="absolute left-3 bottom-3 h-2 w-40 bg-black/50 rounded-full overflow-hidden">
-                <div className="h-2 bg-green-500" style={{ width: `${Math.min(100, Math.max(4, micLevel/2))}%` }} />
+            </div>
+
+            {/* Setup form */}
+            <div className="meet-card p-6 h-fit">
+              <h2 className="text-xl font-medium text-white mb-6">Ready to join?</h2>
+              
+              {permissionError && (
+                <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-3 mb-4">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                    </svg>
+                    <div>
+                      <p className="text-yellow-200 text-sm font-medium">Camera/microphone access</p>
+                      <p className="text-yellow-300 text-sm">{permissionError}</p>
+                      <button 
+                        onClick={() => location.reload()} 
+                        className="text-yellow-400 hover:text-yellow-300 text-sm underline mt-1"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Your name</label>
+                  <input 
+                    data-testid="name" 
+                    value={name} 
+                    onChange={e => setName(e.target.value)} 
+                    className="meet-input" 
+                    placeholder="Enter your name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                  <select data-testid="lang" value={lang} onChange={e => setLang(e.target.value)} className="meet-select">
+                    {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Microphone</label>
+                    <select data-testid="mic-device" value={micId} onChange={e => setMicId(e.target.value)} className="meet-select text-sm">
+                      {mics.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Default'}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Camera</label>
+                    <select data-testid="cam-device" value={camId} onChange={e => setCamId(e.target.value)} className="meet-select text-sm">
+                      {cams.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Default'}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <button 
+                  data-testid="join-btn" 
+                  onClick={joinRoom} 
+                  disabled={!ready || !name} 
+                  className="meet-btn-primary w-full text-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Join meeting
+                </button>
+
+                <p className="text-gray-400 text-xs text-center">
+                  By joining, you agree to our terms of service
+                </p>
               </div>
-            </VideoErrorBoundary>
-          </div>
-          <div className="tile p-4 space-y-3">
-            {permissionError ? (
-              <div className="rounded bg-red-500/15 text-red-300 text-sm px-3 py-2 flex items-center justify-between">
-                <span>{permissionError}</span>
-                <button className="pill" onClick={() => location.reload()}>Retry</button>
-              </div>
-            ) : null}
-            <div className="space-y-1">
-              <div className="text-sm text-neutral-300">Your name</div>
-              <input data-testid="name" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder="e.g., Alex" />
             </div>
-            <div className="space-y-1">
-              <div className="text-sm text-neutral-300">My chat language</div>
-              <select data-testid="lang" value={lang} onChange={e => setLang(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
-                {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <div className="text-sm text-neutral-300">Microphone</div>
-                <select data-testid="mic-device" value={micId} onChange={e => setMicId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
-                  {mics.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Microphone'}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm text-neutral-300">Camera</div>
-                <select data-testid="cam-device" value={camId} onChange={e => setCamId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
-                  {cams.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Camera'}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm text-neutral-300">Speaker</div>
-              <select data-testid="spk-device" value={speakerId} onChange={e => setSpeakerId(e.target.value)} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10">
-                {speakers.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || 'Speaker'}</option>)}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button data-testid="toggle-mic" onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`}>{localMicEnabled ? '🎤 Mic on' : '🔇 Mic off'}</button>
-              <button data-testid="toggle-cam" onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`}>{localCamEnabled ? '📷 Cam on' : '🚫📷 Cam off'}</button>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm text-neutral-300">Room link</div>
-              <div className="flex gap-2">
-                <input data-testid="room-link" readOnly className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" value={`${typeof location!=='undefined'?location.origin:''}${BASE_PATH}/room/${roomId}`} />
-                <button data-testid="copy-room-link" onClick={copyInvite} className="btn">Copy</button>
-              </div>
-            </div>
-            <button data-testid="join-btn" onClick={joinRoom} disabled={!ready || !name} className="btn btn-accent w-full disabled:opacity-50">Join now</button>
-            <div className="text-xs text-neutral-400">Grant access to use camera/mic, or join without them.</div>
           </div>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-2 space-y-3">
+        <div className="flex-1 flex">
+          {/* Main video area */}
+          <div className={`flex-1 flex flex-col ${sidebarOpen ? 'mr-80' : ''} transition-all duration-300`}>
+            <div className="flex-1 p-4">
               <VideoErrorBoundary>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="relative">
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-52 bg-black rounded" />
-                    <div className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs">You</div>
-                    {!localMicEnabled ? <div className="absolute right-2 top-2 rounded bg-error px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Mic off</div> : null}
-                    {!localCamEnabled ? <div className="absolute right-2 top-7 rounded px-2 py-0.5 text-xs" style={{background:'var(--error)'}}>Cam off</div> : null}
+                <div className="video-grid h-full">
+                  {/* Local video */}
+                  <div className="video-tile">
+                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    <div className="video-overlay">
+                      <div className="video-name">You</div>
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {!localMicEnabled && (
+                          <div className="bg-red-600 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M2.22 2.22a.75.75 0 011.06 0L6.56 5.5H9a.75.75 0 010 1.5H8.06l3.94 3.94V14a.75.75 0 01-1.5 0v-2.44l-6.28-6.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                            </svg>
+                          </div>
+                        )}
+                        {!localCamEnabled && (
+                          <div className="bg-red-600 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V4z"/>
+                              <path d="M2 2l16 16" stroke="currentColor" strokeWidth="2"/>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      {localMicEnabled && (
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/70 px-2 py-1 rounded">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <div className="w-8 h-1 bg-gray-600 rounded-full overflow-hidden">
+                            <div 
+                              className="h-1 bg-green-500 transition-all" 
+                              style={{ width: `${Math.min(100, Math.max(4, micLevel/2))}%` }} 
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Remote peers */}
                   {peers.map(p => (
-                    <div key={p.id} className="relative">
+                    <div key={p.id} className="video-tile group">
                       <video
                         autoPlay
                         playsInline
-                        className="w-full h-52 bg-black rounded"
+                        className="w-full h-full object-cover"
                         ref={el => {
                           if (el && p.stream) {
                             (el as any).srcObject = p.stream;
@@ -406,107 +555,273 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                           }
                         }}
                       />
-                      <div className="absolute left-2 bottom-2 glass px-2 py-1 text-xs flex items-center gap-2">
-                        <span>{p.name || 'Guest'}</span>
-                        <span className="badge">{(p.lang || '').toUpperCase()}</span>
-                        <span title={isPeerMuted(p.id) ? 'Muted locally' : 'Live'}>{isPeerMuted(p.id) ? '🔇' : '🎤'}</span>
-                      </div>
-                      <div className="absolute right-2 top-2 flex gap-2">
-                        <button onClick={() => setPinnedPeerId(p.id === pinnedPeerId ? null : p.id)} className="pill hover:bg-white/10" title="Pin">📌</button>
-                        <button onClick={() => togglePeerMute(p.id)} className="pill hover:bg-white/10" title={isPeerMuted(p.id)?'Unmute':'Mute'}>{isPeerMuted(p.id)?'Unmute':'Mute'}</button>
+                      <div className="video-overlay">
+                        <div className="video-name">
+                          <span>{p.name || 'Guest'}</span>
+                          {p.lang && <span className="ml-1 text-xs bg-gray-600 px-1 rounded">{p.lang.toUpperCase()}</span>}
+                        </div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <button 
+                            onClick={() => setPinnedPeerId(p.id === pinnedPeerId ? null : p.id)} 
+                            className="bg-black/70 hover:bg-black/90 rounded-full p-1 transition-colors"
+                            title="Pin participant"
+                          >
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => togglePeerMute(p.id)} 
+                            className={`rounded-full p-1 transition-colors ${isPeerMuted(p.id) ? 'bg-red-600 hover:bg-red-700' : 'bg-black/70 hover:bg-black/90'}`}
+                            title={isPeerMuted(p.id) ? 'Unmute' : 'Mute locally'}
+                          >
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              {isPeerMuted(p.id) ? (
+                                <path fillRule="evenodd" d="M2.22 2.22a.75.75 0 011.06 0L6.56 5.5H9a.75.75 0 010 1.5H8.06l3.94 3.94V14a.75.75 0 01-1.5 0v-2.44l-6.28-6.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                              ) : (
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                              )}
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                          {isPeerMuted(p.id) ? (
+                            <div className="bg-red-600 rounded-full p-1">
+                              <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M2.22 2.22a.75.75 0 011.06 0L6.56 5.5H9a.75.75 0 010 1.5H8.06l3.94 3.94V14a.75.75 0 01-1.5 0v-2.44l-6.28-6.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </VideoErrorBoundary>
             </div>
+
+            {/* Meet-style control bar */}
+            <div className="control-bar">
+              <button 
+                data-testid="toggle-mic" 
+                onClick={() => toggleTrack('audio')} 
+                className={`meet-btn-icon ${localMicEnabled ? '' : 'danger'}`}
+                title={localMicEnabled ? 'Mute microphone' : 'Unmute microphone'}
+              >
+                {localMicEnabled ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5z" clipRule="evenodd"/>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M2.22 2.22a.75.75 0 011.06 0L6.56 5.5H9a.75.75 0 010 1.5H8.06l3.94 3.94V14a.75.75 0 01-1.5 0v-2.44l-6.28-6.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                  </svg>
+                )}
+              </button>
+
+              <button 
+                data-testid="toggle-cam" 
+                onClick={() => toggleTrack('video')} 
+                className={`meet-btn-icon ${localCamEnabled ? '' : 'danger'}`}
+                title={localCamEnabled ? 'Turn off camera' : 'Turn on camera'}
+              >
+                {localCamEnabled ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 6.5l-4 4V7a1 1 0 00-1-1H9.83l8.17 8.17v-7.67zM3.83 2L2 3.83 4.02 5.85C4.01 5.9 4 5.95 4 6v10c0 .55.45 1 1 1h12c.05 0 .1-.01.15-.02L20 19.83 21.83 18 3.83 2z"/>
+                  </svg>
+                )}
+              </button>
+
+              <button 
+                data-testid="share" 
+                className="meet-btn-icon disabled" 
+                title="Screen sharing not available" 
+                disabled
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v11a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm2 2v7h12V5H4z"/>
+                  <path d="M10 15l3-3H7l3 3z"/>
+                </svg>
+              </button>
+
+              <div className="w-px h-6 bg-gray-600"></div>
+
+              <button 
+                data-testid="open-chat" 
+                onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} 
+                className="meet-btn-icon relative"
+                title="Open chat"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 4V5z"/>
+                </svg>
+                {unread > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {unread}
+                  </div>
+                )}
+              </button>
+
+              <button 
+                data-testid="open-people" 
+                onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} 
+                className="meet-btn-icon relative"
+                title="Show participants"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                </svg>
+                <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {1 + peers.length}
+                </div>
+              </button>
+
+              <div className="w-px h-6 bg-gray-600"></div>
+
+              <button 
+                onClick={leaveRoom} 
+                className="meet-btn-danger text-sm px-4"
+                title="Leave meeting"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+
+          {/* Modern sidebar */}
+          {sidebarOpen && (
             <ErrorBoundary>
-              <div className="space-y-3">
-                <div className="text-lg font-semibold">Chat</div>
-                <div className="h-96 overflow-auto rounded bg-neutral-900 p-3 space-y-2">
-                  {messages.map(m => (
-                    <div key={m.id} className="text-sm">
-                      {m.name ? <span className="text-neutral-400 mr-2">{m.name}:</span> : null}
-                      <div className={`${m.name ? '' : 'text-right'}`}>
-                        <span className={`inline-block px-2 py-1 rounded ${m.name ? 'bg-neutral-800 text-neutral-200' : 'bg-blue-600 text-white'}`}>{m.original}</span>
-                      </div>
-                      {m.translated && <div className="text-green-400">{m.translated}</div>}
+              <div className="chat-container w-80 fixed top-0 right-0 h-full">
+                <div className="flex items-center justify-between p-4 border-b border-gray-600">
+                  <div className="flex bg-gray-700 rounded-lg">
+                    <button 
+                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'people' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
+                      onClick={() => setSidebarTab('people')}
+                    >
+                      People
+                    </button>
+                    <button 
+                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'chat' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
+                      onClick={() => setSidebarTab('chat')}
+                    >
+                      Chat
+                    </button>
+                  </div>
+                  <button 
+                    className="text-gray-400 hover:text-white p-1"
+                    onClick={() => setSidebarOpen(false)}
+                    title="Close sidebar"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {sidebarTab === 'people' ? (
+                  <div className="p-4">
+                    <div className="text-sm text-gray-400 mb-4">{1 + peers.length} participants</div>
+                    <div className="space-y-2">
+                      {[{id:'you', name}, ...peers].map(p => (
+                        <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                            {(p.name || 'U')[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-white truncate">
+                              {p.id === 'you' ? `${name} (You)` : (p.name || 'Guest')}
+                            </div>
+                            {p.id === 'you' && (
+                              <div className="text-xs text-gray-400">{lang.toUpperCase()}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {p.id === 'you' ? (
+                              localMicEnabled ? (
+                                <div className="w-2 h-2 bg-green-500 rounded-full" title="Microphone on"></div>
+                              ) : (
+                                <div className="w-2 h-2 bg-red-500 rounded-full" title="Microphone off"></div>
+                              )
+                            ) : (
+                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Active"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={`Message (${getLangLabel(lang)})`} className="px-3 py-2 rounded bg-neutral-800 w-full" />
-                  <button onClick={sendChat} className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-500">Send</button>
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col h-full">
+                    <div className="p-4 border-b border-gray-600">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-400">Auto-translate to:</div>
+                        <select 
+                          data-testid="viewer-lang" 
+                          value={lang} 
+                          onChange={e => setLang(e.target.value)} 
+                          className="meet-select text-xs"
+                        >
+                          {LANGS.map(l => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div data-testid="chat-list" className="flex-1 overflow-auto p-4 space-y-3">
+                      {messages.map(m => (
+                        <div 
+                          key={m.id} 
+                          data-testid="msg" 
+                          data-author={m.name ? 'peer' : 'self'} 
+                          className={`flex ${m.name ? '' : 'justify-end'}`}
+                        >
+                          <div className={`max-w-xs ${m.name ? 'chat-message' : 'chat-message own'}`}>
+                            <div className="text-xs text-gray-300 mb-1">{m.name || 'You'}</div>
+                            {m.translated ? (
+                              <div className="text-sm text-white mb-1" data-translated>{m.translated}</div>
+                            ) : null}
+                            <div className="text-xs text-gray-400" data-original>
+                              {m.translated ? `Original: ${m.original}` : m.original}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="p-4 border-t border-gray-600">
+                      <div className="flex gap-2">
+                        <input 
+                          data-testid="chat-input" 
+                          value={chatInput} 
+                          onChange={e => setChatInput(e.target.value)} 
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } }} 
+                          className="meet-input text-sm" 
+                          placeholder={`Message (${getLangLabel(lang)})`} 
+                        />
+                        <button 
+                          data-testid="chat-send" 
+                          onClick={sendChat} 
+                          className="meet-btn-primary px-3"
+                          title="Send message"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </ErrorBoundary>
-          </div>
-
-          {/* Bottom control bar */}
-          <div className="fixed bottom-4 left-0 right-0 pointer-events-none">
-            <div className="pointer-events-auto mx-auto w-fit glass px-3 py-2 rounded-2xl flex items-center gap-2" style={{height:68}}>
-              <button data-testid="toggle-mic" onClick={() => toggleTrack('audio')} className={`btn ${localMicEnabled ? '' : 'btn-danger'}`} title="Mic">{localMicEnabled?'🎤':'🔇'}</button>
-              <button data-testid="toggle-cam" onClick={() => toggleTrack('video')} className={`btn ${localCamEnabled ? '' : 'btn-danger'}`} title="Camera">{localCamEnabled?'📷':'🚫📷'}</button>
-              <button data-testid="share" className="btn opacity-50 cursor-not-allowed bg-neutral-700 hover:bg-neutral-700 text-neutral-400" title="Screen sharing not available" disabled aria-disabled>🖥️</button>
-              <button data-testid="open-chat" onClick={() => { setSidebarOpen(true); setSidebarTab('chat'); }} className="btn" title="Chat">💬{unread>0?<span className="badge ml-1">{unread}</span>:null}</button>
-              <button data-testid="open-people" onClick={() => { setSidebarOpen(true); setSidebarTab('people'); }} className="btn" title="People">👥<span className="badge ml-1">{1+peers.length}</span></button>
-              <button onClick={() => setSidebarOpen(true)} className="btn" title="Settings">⚙</button>
-              <button onClick={leaveRoom} className="btn btn-danger" title="Leave">Leave</button>
-            </div>
-          </div>
-
-          {/* Right sidebar drawer */}
-          {sidebarOpen ? (
-            <div data-testid="drawer" className="fixed top-0 right-0 h-full w-[380px] glass p-3 space-y-3 overflow-auto">
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2 text-sm">
-                  <button className={`pill ${sidebarTab==='people'?'bg-white/10':''}`} onClick={()=>setSidebarTab('people')}>People</button>
-                  <button className={`pill ${sidebarTab==='chat'?'bg-white/10':''}`} onClick={()=>setSidebarTab('chat')}>Chat</button>
-                </div>
-                <button className="pill" onClick={()=>setSidebarOpen(false)}>✕</button>
-              </div>
-              {sidebarTab==='people' ? (
-                <div className="space-y-2">
-                  <div className="text-sm text-neutral-400">{1+peers.length} in room</div>
-                  {[{id:'you', name}, ...peers].map(p => (
-                    <div key={p.id} className="flex items-center justify-between tile p-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">{(p.name||'U')[0]}</div>
-                        <div className="text-sm">{p.id==='you' ? `${name} (You)` : (p.name || 'Guest')}</div>
-                        {p.id==='you' ? <span className="badge">{lang.toUpperCase()}</span> : null}
-                      </div>
-                      <div className="text-sm text-neutral-400">{p.id==='you'? (localMicEnabled?'🎤':'🔇') : '🎤'}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm text-neutral-400">Messages auto-translate</div>
-                    <select data-testid="viewer-lang" value={lang} onChange={e=>setLang(e.target.value)} className="px-2 py-1 rounded bg-neutral-800 border border-white/10 text-sm">
-                      {LANGS.map(l => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
-                    </select>
-                  </div>
-                  <div data-testid="chat-list" className="flex-1 overflow-auto space-y-2">
-                    {messages.map(m => (
-                      <div key={m.id} data-testid="msg" data-author={m.name ? 'peer' : 'self'} className="text-sm tile p-2">
-                        <div className="text-xs text-neutral-400">{m.name || 'You'}</div>
-                        {m.translated ? (
-                          <div className="text-[15px] text-neutral-100" data-translated>{m.translated}</div>
-                        ) : null}
-                        <div className="text-xs text-neutral-400" data-original>Original: {m.original}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-2 flex gap-2">
-                    <input data-testid="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } }} className="w-full px-3 py-2 rounded bg-neutral-800 border border-white/10" placeholder={`Message (auto-translated to ${getLangLabel(lang)})`} />
-                    <button data-testid="chat-send" onClick={sendChat} className="btn">➤</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-        </>
+          )}
+        </div>
       )}
     </div>
   );
