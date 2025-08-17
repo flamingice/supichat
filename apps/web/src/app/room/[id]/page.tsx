@@ -123,28 +123,60 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     })();
   }, []);
 
+  // Persist chat per room in sessionStorage while connected
+  useEffect(() => {
+    if (!joined) return;
+    try {
+      const key = `supichat:messages:${roomId}`;
+      const raw = sessionStorage.getItem(key);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) setMessages(arr);
+      }
+    } catch {}
+  }, [joined, roomId]);
+
   useEffect(() => {
     if (!ready) return;
-    const SIGNALING_ORIGIN = process.env.NEXT_PUBLIC_SIGNALING_ORIGIN ||
-      (typeof location !== 'undefined' && location.hostname === 'localhost' && location.port === '3000'
-        ? 'http://localhost:4001'
-        : (typeof location !== 'undefined' ? location.origin : ''));
-    const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH, transports: ['websocket'] });
+    // Determine signaling origin:
+    // 1) Use explicit env override when provided.
+    // 2) Local dev: localhost -> :4001.
+    // 3) Direct port access (non-80/443): same host on :4001.
+    // 4) Otherwise assume reverse proxy on same origin.
+    let SIGNALING_ORIGIN = process.env.NEXT_PUBLIC_SIGNALING_ORIGIN || '';
+    if (!SIGNALING_ORIGIN && typeof location !== 'undefined') {
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const nonStandardPort = location.port && location.port !== '80' && location.port !== '443';
+      if (isLocal) {
+        SIGNALING_ORIGIN = 'http://localhost:4001';
+      } else if (nonStandardPort) {
+        SIGNALING_ORIGIN = `${location.protocol}//${location.hostname}:4001`;
+      } else {
+        SIGNALING_ORIGIN = location.origin; // reverse proxy expected to route /supichat/socket.io
+      }
+    }
+  const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       // no-op
     });
 
-    socket.on('peers', (list: { id: string; name?: string; lang?: string }[]) => {
+    socket.on('peers', async (list: { id: string; name?: string; lang?: string }[]) => {
       setPeers(prev => {
         const existing = new Set(prev.map(p => p.id));
         const merged = [...prev];
         for (const it of list) {
-          if (!existing.has(it.id)) merged.push({ id: it.id, name: it.name });
+          if (!existing.has(it.id)) merged.push({ id: it.id, name: it.name, lang: it.lang });
         }
         return merged;
       });
+      // As the new joiner, prepare peer connections; existing peers will initiate via 'peer-joined'.
+      for (const it of list) {
+        try {
+          await connectToPeer(it.id, it.name, false);
+        } catch {}
+      }
     });
 
     socket.on('peer-joined', async ({ id, name }) => {
@@ -207,6 +239,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       socket.disconnect();
       pcMap.current.forEach(pc => pc.close());
       pcMap.current.clear();
+  try { sessionStorage.removeItem(`supichat:messages:${roomId}`); } catch {}
     };
   }, [ready, lang]);
 
@@ -256,6 +289,12 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     setMessages(m => [...m, { id: uuidv4(), original: chatInput }]);
     setChatInput('');
   }
+
+  // Persist messages while connected
+  useEffect(() => {
+    if (!joined) return;
+    try { sessionStorage.setItem(`supichat:messages:${roomId}`, JSON.stringify(messages)); } catch {}
+  }, [messages, joined, roomId]);
 
   async function toggleTrack(kind: 'audio' | 'video') {
     if (!localStream) return;
@@ -499,12 +538,13 @@ export default function RoomPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex">
+        <div className="flex-1 flex flex-col md:flex-row">
           {/* Main video area */}
-          <div className={`flex-1 flex flex-col ${sidebarOpen ? 'mr-80' : ''} transition-all duration-300`}>
-            <div className="flex-1 p-4">
+          <div className={`flex-1 flex flex-col ${sidebarOpen ? 'md:mr-80' : ''} transition-all duration-300`}>
+            <div className="p-4 md:flex-1">
               <VideoErrorBoundary>
-                <div className="video-grid h-full">
+                {/* On mobile, constrain to half viewport height */}
+                <div className="video-grid h-[50vh] md:h-full">
                   {/* Local video */}
                   <div className="video-tile">
                     <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
@@ -678,7 +718,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
                 </svg>
-                <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <div data-testid="participants-count" className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {1 + peers.length}
                 </div>
               </button>
@@ -695,39 +735,21 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* Modern sidebar */}
-          {sidebarOpen && (
+          {/* Mobile chat: always visible, lower half, scrollable */}
+          <div className="block md:hidden h-[50vh]" data-testid="mobile-panel">
             <ErrorBoundary>
-              <div className="chat-container w-80 fixed top-0 right-0 h-full">
+              <div className="chat-container h-full overflow-auto">
                 <div className="flex items-center justify-between p-4 border-b border-gray-600">
                   <div className="flex bg-gray-700 rounded-lg">
-                    <button 
-                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'people' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
-                      onClick={() => setSidebarTab('people')}
-                    >
-                      People
-                    </button>
-                    <button 
-                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'chat' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
-                      onClick={() => setSidebarTab('chat')}
-                    >
-                      Chat
-                    </button>
+                    <button className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'people' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`} onClick={() => setSidebarTab('people')}>People</button>
+                    <button className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'chat' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`} onClick={() => setSidebarTab('chat')}>Chat</button>
                   </div>
-                  <button 
-                    className="text-gray-400 hover:text-white p-1"
-                    onClick={() => setSidebarOpen(false)}
-                    title="Close sidebar"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-                    </svg>
-                  </button>
+                  <div className="text-sm text-gray-400">{1 + peers.length} participants</div>
                 </div>
 
                 {sidebarTab === 'people' ? (
-                  <div className="p-4">
-                    <div className="text-sm text-gray-400 mb-4">{1 + peers.length} participants</div>
+                  <div className="p-4" data-testid="people-list">
+                    <div data-testid="participants-header" className="text-sm text-gray-400 mb-4">{1 + peers.length} participants</div>
                     <div className="space-y-2">
                       {[{id:'you', name}, ...peers].map(p => (
                         <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition-colors">
@@ -813,6 +835,92 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
                           </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ErrorBoundary>
+          </div>
+
+      {/* Desktop sidebar */}
+      {sidebarOpen && (
+            <ErrorBoundary>
+        <div className="hidden md:block chat-container w-80 fixed top-0 right-0 h-full" data-testid="sidebar">
+                {/* reuse the same content as mobile chat header/body */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-600">
+                  <div className="flex bg-gray-700 rounded-lg">
+                    <button className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'people' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`} onClick={() => setSidebarTab('people')}>People</button>
+                    <button className={`px-3 py-1 text-sm rounded-lg transition-colors ${sidebarTab === 'chat' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`} onClick={() => setSidebarTab('chat')}>Chat</button>
+                  </div>
+                  <button className="text-gray-400 hover:text-white p-1" onClick={() => setSidebarOpen(false)} title="Close sidebar">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                  </button>
+                </div>
+
+                {sidebarTab === 'people' ? (
+                  <div className="p-4" data-testid="people-list">
+                    <div data-testid="participants-header" className="text-sm text-gray-400 mb-4">{1 + peers.length} participants</div>
+                    <div className="space-y-2">
+                      {[{id:'you', name}, ...peers].map(p => (
+                        <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                            {(p.name || 'U')[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-white truncate">
+                              {p.id === 'you' ? `${name} (You)` : (p.name || 'Guest')}
+                            </div>
+                            {p.id === 'you' && (
+                              <div className="text-xs text-gray-400">{lang.toUpperCase()}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {p.id === 'you' ? (
+                              localMicEnabled ? (
+                                <div className="w-2 h-2 bg-green-500 rounded-full" title="Microphone on"></div>
+                              ) : (
+                                <div className="w-2 h-2 bg-red-500 rounded-full" title="Microphone off"></div>
+                              )
+                            ) : (
+                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Active"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col h-full">
+                    <div className="p-4 border-b border-gray-600">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-400">Auto-translate to:</div>
+                        <select data-testid="viewer-lang" value={lang} onChange={e => setLang(e.target.value)} className="meet-select text-xs">
+                          {LANGS.map(l => <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div data-testid="chat-list" className="flex-1 overflow-auto p-4 space-y-3">
+                      {messages.map(m => (
+                        <div key={m.id} data-testid="msg" data-author={m.name ? 'peer' : 'self'} className={`flex ${m.name ? '' : 'justify-end'}`}>
+                          <div className={`max-w-xs ${m.name ? 'chat-message' : 'chat-message own'}`}>
+                            <div className="text-xs text-gray-300 mb-1">{m.name || 'You'}</div>
+                            {m.translated ? (<div className="text-sm text-white mb-1" data-translated>{m.translated}</div>) : null}
+                            <div className="text-xs text-gray-400" data-original>
+                              {m.translated ? `Original: ${m.original}` : m.original}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="p-4 border-t border-gray-600">
+                      <div className="flex gap-2">
+                        <input data-testid="chat-input" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } }} className="meet-input text-sm" placeholder={`Message (${getLangLabel(lang)})`} />
+                        <button data-testid="chat-send" onClick={sendChat} className="meet-btn-primary px-3" title="Send message">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
                         </button>
                       </div>
                     </div>
