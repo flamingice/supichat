@@ -1,5 +1,6 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import { getVersion } from '@/lib/version';
 
 export const metadata = {
   title: 'SupiChat',
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const v = getVersion();
   return (
     <html lang="en">
       <body className="min-h-screen">
@@ -19,6 +21,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="text-xs text-neutral-400">personal video chat</div>
           </header>
           {children}
+        </div>
+        <div className="fixed bottom-3 right-3 z-50 select-none">
+          <div className="px-2 py-1 rounded bg-black/60 text-[11px] text-gray-100 border border-white/10 tracking-wide">
+            {v ? `v0.${v.version} ${v.timestamp}` : 'v0.0 dev'}
+          </div>
         </div>
       </body>
     </html>
