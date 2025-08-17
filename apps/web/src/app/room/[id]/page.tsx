@@ -171,10 +171,10 @@ export default function RoomPage({ params }: { params: { id: string } }) {
         }
         return merged;
       });
-      // As the new joiner, proactively connect to all existing peers
+      // As the new joiner, prepare peer connections; existing peers will initiate via 'peer-joined'.
       for (const it of list) {
         try {
-          await connectToPeer(it.id, it.name, true);
+          await connectToPeer(it.id, it.name, false);
         } catch {}
       }
     });
