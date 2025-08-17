@@ -35,6 +35,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   const [pinnedPeerId, setPinnedPeerId] = useState<string | null>(null);
   const [micLevel, setMicLevel] = useState(0);
   const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [connStatus, setConnStatus] = useState<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('connecting');
   const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
   const [cams, setCams] = useState<MediaDeviceInfo[]>([]);
   const [speakers, setSpeakers] = useState<MediaDeviceInfo[]>([]);
@@ -53,6 +54,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   const remoteStreams = useRef<Map<string, MediaStream>>(new Map());
   const [peers, setPeers] = useState<RemotePeer[]>([]);
   const mutedPeerIdsRef = useRef<Set<string>>(new Set());
+  const reconnectTimerRef = useRef<number | null>(null);
 
   const iceServers = useMemo(() => {
     const s: RTCIceServer[] = [];
@@ -137,7 +139,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   }, [joined, roomId]);
 
   useEffect(() => {
-    if (!ready) return;
+  if (!ready) return;
     // Determine signaling origin:
     // 1) Use explicit env override when provided.
     // 2) Local dev: localhost -> :4001.
@@ -158,8 +160,31 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH });
     socketRef.current = socket;
 
+    // Connection status handling
+    setConnStatus('connecting');
+    const clearReconnectTimer = () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current as unknown as number);
+        reconnectTimerRef.current = null;
+      }
+    };
+    const markReconnecting = () => {
+      setConnStatus('reconnecting');
+      clearReconnectTimer();
+      reconnectTimerRef.current = window.setTimeout(() => {
+        setConnStatus('disconnected');
+      }, 15000);
+    };
+
     socket.on('connect', () => {
-      // no-op
+      setConnStatus('connected');
+      clearReconnectTimer();
+    });
+    socket.on('disconnect', () => {
+      markReconnecting();
+    });
+    socket.on('connect_error', () => {
+      markReconnecting();
     });
 
     socket.on('peers', async (list: { id: string; name?: string; lang?: string }[]) => {
@@ -240,6 +265,10 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       pcMap.current.forEach(pc => pc.close());
       pcMap.current.clear();
   try { sessionStorage.removeItem(`supichat:messages:${roomId}`); } catch {}
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current as unknown as number);
+        reconnectTimerRef.current = null;
+      }
     };
   }, [ready, lang]);
 
@@ -380,6 +409,25 @@ export default function RoomPage({ params }: { params: { id: string } }) {
           </button>
         </div>
       </div>
+
+      {/* Connection status banner */}
+      {connStatus !== 'connected' && (
+        <div
+          data-testid="connection-status"
+          className={
+            'px-6 py-2 text-sm border-b ' +
+            (connStatus === 'disconnected'
+              ? 'bg-red-700/60 border-red-600 text-white'
+              : connStatus === 'reconnecting'
+              ? 'bg-yellow-700/60 border-yellow-600 text-yellow-100'
+              : 'bg-blue-700/60 border-blue-600 text-blue-100')
+          }
+        >
+          {connStatus === 'connecting' && 'Connecting to server…'}
+          {connStatus === 'reconnecting' && 'Connection lost. Reconnecting…'}
+          {connStatus === 'disconnected' && 'Disconnected. Trying to reconnect…'}
+        </div>
+      )}
 
       {!joined ? (
         <div className="flex-1 flex items-center justify-center p-6">
@@ -805,12 +853,12 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                         >
                           <div className={`max-w-xs ${m.name ? 'chat-message' : 'chat-message own'}`}>
                             <div className="text-xs text-gray-300 mb-1">{m.name || 'You'}</div>
-                            {m.translated ? (
-                              <div className="text-sm text-white mb-1" data-translated>{m.translated}</div>
-                            ) : null}
                             <div className="text-xs text-gray-400" data-original>
-                              {m.translated ? `Original: ${m.original}` : m.original}
+                              {m.original}
                             </div>
+                            {m.translated ? (
+                              <div className="text-sm text-white mt-1" data-translated>{m.translated}</div>
+                            ) : null}
                           </div>
                         </div>
                       ))}
@@ -907,10 +955,10 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                         <div key={m.id} data-testid="msg" data-author={m.name ? 'peer' : 'self'} className={`flex ${m.name ? '' : 'justify-end'}`}>
                           <div className={`max-w-xs ${m.name ? 'chat-message' : 'chat-message own'}`}>
                             <div className="text-xs text-gray-300 mb-1">{m.name || 'You'}</div>
-                            {m.translated ? (<div className="text-sm text-white mb-1" data-translated>{m.translated}</div>) : null}
                             <div className="text-xs text-gray-400" data-original>
-                              {m.translated ? `Original: ${m.original}` : m.original}
+                              {m.original}
                             </div>
+                            {m.translated ? (<div className="text-sm text-white mt-1" data-translated>{m.translated}</div>) : null}
                           </div>
                         </div>
                       ))}
