@@ -143,10 +143,18 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     // Determine signaling origin:
     // Prefer same-origin by default so proxies can route /supichat/socket.io.
     // Only force :4001 for explicit local dev.
-    let SIGNALING_ORIGIN = process.env.NEXT_PUBLIC_SIGNALING_ORIGIN || '';
-    if (!SIGNALING_ORIGIN && typeof location !== 'undefined') {
+    // Signaling origin selection:
+    // - In production, always prefer same-origin so nginx can proxy /supichat/socket.io (more reliable on mobile).
+    // - Allow explicit localhost override for dev.
+    let SIGNALING_ORIGIN = '';
+    if (typeof location !== 'undefined') {
       const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-      SIGNALING_ORIGIN = isLocal ? 'http://localhost:4001' : location.origin;
+      const EXPLICIT = process.env.NEXT_PUBLIC_SIGNALING_ORIGIN || '';
+      if (isLocal && EXPLICIT) {
+        SIGNALING_ORIGIN = EXPLICIT;
+      } else {
+        SIGNALING_ORIGIN = location.origin; // same-origin in prod
+      }
     }
   const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH });
     socketRef.current = socket;
@@ -563,7 +571,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                 <button 
                   data-testid="join-btn" 
                   onClick={joinRoom} 
-                  disabled={!ready || !name} 
+                  disabled={!name} 
                   className="meet-btn-primary w-full text-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Join meeting

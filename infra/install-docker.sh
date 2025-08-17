@@ -35,28 +35,41 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 0
 fi
 
-# Auto-install docker-compose if missing
-if ! command -v docker-compose >/dev/null 2>&1; then
-    log "Installing docker-compose..."
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+USE_COMPOSE_V2=false
+if docker compose version >/dev/null 2>&1; then
+    USE_COMPOSE_V2=true
+else
+    # Auto-install docker-compose v1 only if v2 not present
+    if ! command -v docker-compose >/dev/null 2>&1; then
+        log "Installing docker-compose (legacy fallback)..."
+        sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    fi
 fi
 
-# Install buildx plugin to avoid legacy builder warnings
+export DOCKER_BUILDKIT=1
+# Install/enable buildx plugin for modern builds
 if ! docker buildx version >/dev/null 2>&1; then
     log "Installing Docker Buildx for modern image building..."
-    # Try package manager first (Ubuntu/Debian)
     if command -v apt >/dev/null 2>&1; then
         sudo apt update && sudo apt install -y docker-buildx-plugin || true
     fi
-    
-    # Enable buildx if available
-    if docker buildx version >/dev/null 2>&1; then
-        docker buildx install 2>/dev/null || true
-        log "✓ Docker Buildx enabled (BuildKit active)"
-    else
-        warn "Buildx installation failed - using legacy builder (still works fine)"
-    fi
+fi
+if docker buildx version >/dev/null 2>&1; then
+    docker buildx create --use --name supichat-builder >/dev/null 2>&1 || docker buildx use supichat-builder || true
+    log "✓ Docker Buildx enabled (BuildKit active)"
+else
+    warn "Buildx not available; proceeding with legacy builder"
+fi
+
+# Ensure required ports are free before building
+WEB_PORT=${WEB_PORT:-3000}
+SIGNALING_PORT=${SIGNALING_PORT:-4001}
+if ss -ltnp 2>/dev/null | grep -q ":$WEB_PORT "; then
+    error "Port $WEB_PORT is in use. Free it before continuing."
+fi
+if ss -ltnp 2>/dev/null | grep -q ":$SIGNALING_PORT "; then
+    error "Port $SIGNALING_PORT is in use. Free it before continuing."
 fi
 
 # Check Docker permissions and auto-fix
@@ -98,13 +111,11 @@ fi
 
 # Build and start using modern Docker Compose syntax
 log "Building SupiChat containers (with latest npm)..."
-if docker compose version >/dev/null 2>&1; then
-    # Use modern docker compose (space, not hyphen)
+if [ "$USE_COMPOSE_V2" = true ]; then
     docker compose -f docker-compose.prod.yml build --parallel
     log "Starting services..."
     docker compose -f docker-compose.prod.yml up -d
 else
-    # Fallback to legacy docker-compose
     docker-compose -f docker-compose.prod.yml build --parallel
     log "Starting services..."
     docker-compose -f docker-compose.prod.yml up -d
@@ -116,14 +127,22 @@ log "Creating management scripts..."
 cat > start.sh <<'EOF'
 #!/bin/bash
 echo "🚀 Starting SupiChat..."
+WEB_PORT=${WEB_PORT:-3000}
+SIGNALING_PORT=${SIGNALING_PORT:-4001}
+if ss -ltnp 2>/dev/null | grep -q ":$WEB_PORT "; then
+    echo "Port $WEB_PORT in use. Stop the service using it and retry." >&2
+    exit 1
+fi
+if ss -ltnp 2>/dev/null | grep -q ":$SIGNALING_PORT "; then
+    echo "Port $SIGNALING_PORT in use. Stop the service using it and retry." >&2
+    exit 1
+fi
 if docker compose version >/dev/null 2>&1; then
     docker compose -f docker-compose.prod.yml up -d
-    echo ""
-    docker compose -f docker-compose.prod.yml ps
+    echo ""; docker compose -f docker-compose.prod.yml ps
 else
     docker-compose -f docker-compose.prod.yml up -d
-    echo ""
-    docker-compose -f docker-compose.prod.yml ps
+    echo ""; docker-compose -f docker-compose.prod.yml ps
 fi
 EOF
 
@@ -142,15 +161,15 @@ cat > restart.sh <<'EOF'
 echo "🔄 Updating and restarting SupiChat..."
 git pull
 if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml down -v
     docker compose -f docker-compose.prod.yml build --parallel
     docker compose -f docker-compose.prod.yml up -d
-    echo ""
-    docker compose -f docker-compose.prod.yml ps
+    echo ""; docker compose -f docker-compose.prod.yml ps
 else
+    docker-compose -f docker-compose.prod.yml down -v
     docker-compose -f docker-compose.prod.yml build --parallel
     docker-compose -f docker-compose.prod.yml up -d
-    echo ""
-    docker-compose -f docker-compose.prod.yml ps
+    echo ""; docker-compose -f docker-compose.prod.yml ps
 fi
 EOF
 
@@ -184,7 +203,7 @@ sleep 5
 
 # Status check
 log "Container status:"
-if docker compose version >/dev/null 2>&1; then
+if [ "$USE_COMPOSE_V2" = true ]; then
     docker compose -f docker-compose.prod.yml ps
 else
     docker-compose -f docker-compose.prod.yml ps

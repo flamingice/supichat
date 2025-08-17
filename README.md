@@ -4,11 +4,6 @@ A real-time video chat application with automatic message translation.
 
 ## Features
 
-- Real-time video chat using WebRTC
-- Automatic message translation between multiple languages
-- Simple room-based chat system
-- Modern React/Next.js frontend
-- Socket.IO signaling server
 
 ## Quick Start for Windows
 
@@ -21,14 +16,8 @@ A real-time video chat application with automatic message translation.
 
 SupiChat includes automatic Node.js installation! If Node.js is not detected on your system, the startup scripts will:
 
-- Download Node.js v20.11.1 from the official website
-- Install it silently in the background
-- Configure environment variables
-- Continue with SupiChat setup
 
 **Note**: For best results, run the scripts as Administrator. If you prefer manual installation, you can:
-- Run `npm run install:nodejs` to install Node.js only
-- Or download manually from [nodejs.org](https://nodejs.org/)
 
 ### Installation & Running
 
@@ -134,53 +123,22 @@ supichat/
 
 ### Available Scripts
 
-- `npm run dev:windows` - Start both services (Windows batch)
-- `npm run dev:windows:ps` - Start both services (Windows PowerShell)
-- `npm run dev:web` - Start web app only
-- `npm run dev:signaling` - Start signaling server only
-- `npm run install:all` - Install all dependencies
-- `npm run build` - Build for production
-- `npm run start` - Start production build
-- `npm run smoke` - Run a local smoke test (curl-based)
 
 ### Windows Scripts
 
-- `start-windows.bat` - Start both services (batch file)
-- `start-windows.ps1` - Start both services (PowerShell script)
-- `stop-windows.bat` - Stop running services
-- `install-nodejs.ps1` - Standalone Node.js installer
 
 ### Available Scripts
 
-- `npm run dev:windows` - Start both services (Windows batch)
-- `npm run dev:windows:ps` - Start both services (Windows PowerShell)
-- `npm run dev:web` - Start web app only
-- `npm run dev:signaling` - Start signaling server only
-- `npm run install:all` - Install all dependencies
-- `npm run install:nodejs` - Install Node.js only
-- `npm run build` - Build for production
-- `npm run start` - Start production build
 
 ### Troubleshooting
 
 **Node.js installation issues:**
-- Run scripts as Administrator for best results
-- Check internet connection for download
-- If auto-installation fails, run `npm run install:nodejs` manually
-- Restart computer after installation if Node.js is not found
 
 **Port already in use:**
-- Web app (3000): Change port in `apps/web/package.json`
-- Signaling (4001): Change port in `services/signaling/server.js`
 
 **WebRTC issues:**
-- Ensure you're using HTTPS in production
-- Check firewall settings
-- Verify STUN/TURN server configuration
 
 **Translation not working:**
-- Check translation API configuration in `.env.local`
-- Verify API keys are valid
 
 ## Docker (Windows/macOS/Linux)
 
@@ -207,8 +165,6 @@ Quickest way to run everything with minimal setup using Docker Desktop:
    ```
 
 Notes:
-- TURN (`coturn`) is optional for local dev and disabled by default via profiles.
-- To enable TURN (may be limited on Windows due to UDP/NAT), run:
   ```bash
   docker compose -f infra/docker-compose.yml --profile turn up --build
   ```
@@ -226,25 +182,15 @@ bash infra/install-docker.sh
 ```
 
 **That's it!** The script automatically:
-- ✅ Installs Docker if missing
-- ✅ Builds and starts SupiChat  
-- ✅ Creates management scripts
-- ✅ Handles camera/microphone access guidance
 
 ## 📹 Camera/Microphone Access
 
 **For Testing:**
-- ✅ **localhost** - Always works (even HTTP): `http://localhost:3000/supichat`
-- ✅ **127.0.0.1** - Always works: `http://127.0.0.1:3000/supichat`
 
 **For Production (Public IP):**
-- 🔒 **HTTPS required** - Run `./ssl-setup.sh` after installation
-- 🏷️ **Domain recommended** - Point domain to your server IP
 
 **For Testing Public IP without HTTPS:**
-- 🛠️ **Chrome flags**: `--unsafely-treat-insecure-origin-as-secure=http://YOUR_IP:3000`
 
----
 
 ## 🛠️ Development
 
@@ -261,7 +207,6 @@ npm run dev
 # Camera/mic work perfectly on localhost!
 ```
 
----
 
 ## 🔧 Alternative Deployments
 
@@ -290,16 +235,10 @@ bash infra/install-systemd.sh
 bash infra/install-ubuntu.sh  # Legacy PM2-based installer
 ```
 
----
 
 ### Configuration Notes
-- Set `DEEPL_API_KEY` for translations
-- Configure nginx reverse proxy (see `infra/nginx.conf`)
-- Consider TURN server for better NAT traversal
 
 HTTPS (domain or IP)
-- Run interactive HTTPS setup: `sudo bash infra/setup-https.sh your.domain` or your server IP.
-- For IP certificates, Let’s Encrypt has announced short‑lived IP certs (~6 days). Not all ACME clients (e.g. certbot) may fully support them yet. The script will attempt issuance; if unsupported, it offers a self‑signed fallback and leaves a renewal timer only when an LE IP cert is present. See: [Let’s Encrypt – We’ve Issued Our First IP Address Certificate](https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate).
 
 ## License
 
@@ -309,13 +248,11 @@ HTTPS (domain or IP)
 
 ## Ideas / Roadmap
 
-- Context-aware translations (use recent chat history)
    - Feed the last 10–20 chat lines as context into the translation request so tone/names/pronouns remain consistent.
    - Implement in `apps/web/src/app/api/translate/route.ts`: accept optional `context` payload (array of recent messages) and pass to provider if supported.
    - Maintain a per-room sliding window on the client; trim to a safe token/char budget. Redact PII before sending.
    - Add rate limiting and caching to avoid provider overuse; include a feature flag to toggle context mode.
 
-- “i” info button next to each translation
    - Small info icon beside translated text opens a popover with: alternative translations (when the provider supports variants), glossary hits, formality level, and a link to “Improve translation”.
    - UI: accessible icon button with tooltip; popover component that lazy-loads details via a lightweight API (`/api/translate/explain`).
    - Backend: call provider-specific endpoints/params to request alternatives or metadata; gracefully degrade if unavailable.
