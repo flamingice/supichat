@@ -15,8 +15,10 @@ COPY apps ./apps
 # Build the web app (Next.js standalone output)
 RUN npm run build -w apps/web \
   && cp -r apps/web/.next/standalone /standalone \
-  && cp -r apps/web/public /standalone/public \
-  && cp -r apps/web/.next/static /standalone/.next/static
+  && mkdir -p /standalone/apps/web/public \
+  && if [ -d apps/web/public ]; then cp -r apps/web/public/* /standalone/apps/web/public/; fi \
+  && mkdir -p /standalone/apps/web/.next \
+  && cp -r apps/web/.next/static /standalone/apps/web/.next/static
 
 # Runtime stage
 FROM node:20-alpine
@@ -24,7 +26,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /standalone ./
 EXPOSE 3000
-CMD ["node", "server.js"]
+# In monorepo standalone output, the server entry is under apps/web
+CMD ["node", "apps/web/server.js"]
 
 
 

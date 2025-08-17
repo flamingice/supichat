@@ -14,8 +14,23 @@ copy infra\env.local.example .env   # Windows PowerShell
 # or
 cp infra/env.local.example .env     # macOS/Linux
 
-# run compose
+# recommended: enable BuildKit/buildx for faster, cache-friendly builds
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
+# run compose (Compose v2)
 docker compose -f infra/docker-compose.yml up --build
+
+# if your Docker lacks the v2 "compose" subcommand, use the legacy binary:
+# docker-compose -f infra/docker-compose.yml up --build
+```
+
+Tip: To install Compose v2 and buildx on Ubuntu (requires sudo):
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin docker-buildx-plugin
+docker compose version
+docker buildx version
 ```
 
 Open: http://localhost:3000/supichat
