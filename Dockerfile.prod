@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 RUN apk add --no-cache wget && \
     npm install -g npm@latest && \
     addgroup --system --gid 1001 nodejs && \
@@ -30,4 +30,5 @@ COPY --from=builder /app/apps/web/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+# In monorepo standalone output, server.js resides under apps/web
+CMD ["node", "apps/web/server.js"]
