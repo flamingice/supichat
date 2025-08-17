@@ -46,7 +46,8 @@ popd >/dev/null
 
 pushd services/signaling >/dev/null
 if ! run_pm2 restart supichat-signaling; then
-  PORT="$SIGNALING_PORT" run_pm2 start server.js --name supichat-signaling --update-env
+  # Start signaling via npm to avoid absolute path issues under /root
+  PORT="$SIGNALING_PORT" run_pm2 start npm --name supichat-signaling -- start
 fi
 popd >/dev/null
 run_pm2 save

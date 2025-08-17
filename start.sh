@@ -22,7 +22,8 @@ run_pm2() {
 }
 
 pushd services/signaling >/dev/null
-PORT="$SIGNALING_PORT" run_pm2 start server.js --name supichat-signaling --update-env
+# Start signaling via npm to avoid absolute path issues under /root
+PORT="$SIGNALING_PORT" run_pm2 start npm --name supichat-signaling -- start
 popd >/dev/null
 
 pushd apps/web >/dev/null
