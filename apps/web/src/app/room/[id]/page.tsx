@@ -162,15 +162,21 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       // no-op
     });
 
-    socket.on('peers', (list: { id: string; name?: string; lang?: string }[]) => {
+    socket.on('peers', async (list: { id: string; name?: string; lang?: string }[]) => {
       setPeers(prev => {
         const existing = new Set(prev.map(p => p.id));
         const merged = [...prev];
         for (const it of list) {
-          if (!existing.has(it.id)) merged.push({ id: it.id, name: it.name });
+          if (!existing.has(it.id)) merged.push({ id: it.id, name: it.name, lang: it.lang });
         }
         return merged;
       });
+      // As the new joiner, proactively connect to all existing peers
+      for (const it of list) {
+        try {
+          await connectToPeer(it.id, it.name, true);
+        } catch {}
+      }
     });
 
     socket.on('peer-joined', async ({ id, name }) => {
@@ -712,7 +718,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
                 </svg>
-                <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <div data-testid="participants-count" className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {1 + peers.length}
                 </div>
               </button>
