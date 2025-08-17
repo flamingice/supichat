@@ -141,21 +141,12 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   useEffect(() => {
   if (!ready) return;
     // Determine signaling origin:
-    // 1) Use explicit env override when provided.
-    // 2) Local dev: localhost -> :4001.
-    // 3) Direct port access (non-80/443): same host on :4001.
-    // 4) Otherwise assume reverse proxy on same origin.
+    // Prefer same-origin by default so proxies can route /supichat/socket.io.
+    // Only force :4001 for explicit local dev.
     let SIGNALING_ORIGIN = process.env.NEXT_PUBLIC_SIGNALING_ORIGIN || '';
     if (!SIGNALING_ORIGIN && typeof location !== 'undefined') {
       const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-      const nonStandardPort = location.port && location.port !== '80' && location.port !== '443';
-      if (isLocal) {
-        SIGNALING_ORIGIN = 'http://localhost:4001';
-      } else if (nonStandardPort) {
-        SIGNALING_ORIGIN = `${location.protocol}//${location.hostname}:4001`;
-      } else {
-        SIGNALING_ORIGIN = location.origin; // reverse proxy expected to route /supichat/socket.io
-      }
+      SIGNALING_ORIGIN = isLocal ? 'http://localhost:4001' : location.origin;
     }
   const socket = io(SIGNALING_ORIGIN, { path: SIGNALING_PATH });
     socketRef.current = socket;

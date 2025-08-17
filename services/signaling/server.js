@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 const app = express();
 const httpServer = createServer(app);
 
-const SIGNALING_PATH = process.env.NEXT_PUBLIC_SIGNALING_PATH || '/supichat/socket.io';
+const SIGNALING_PATH = process.env.NEXT_PUBLIC_SIGNALING_PATH || process.env.SIGNALING_PATH || '/supichat/socket.io';
 const io = new Server(httpServer, {
   path: SIGNALING_PATH,
   cors: {

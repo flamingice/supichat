@@ -307,3 +307,19 @@ HTTPS (domain or IP)
 
 
 
+## Ideas / Roadmap
+
+- Context-aware translations (use recent chat history)
+   - Feed the last 10–20 chat lines as context into the translation request so tone/names/pronouns remain consistent.
+   - Implement in `apps/web/src/app/api/translate/route.ts`: accept optional `context` payload (array of recent messages) and pass to provider if supported.
+   - Maintain a per-room sliding window on the client; trim to a safe token/char budget. Redact PII before sending.
+   - Add rate limiting and caching to avoid provider overuse; include a feature flag to toggle context mode.
+
+- “i” info button next to each translation
+   - Small info icon beside translated text opens a popover with: alternative translations (when the provider supports variants), glossary hits, formality level, and a link to “Improve translation”.
+   - UI: accessible icon button with tooltip; popover component that lazy-loads details via a lightweight API (`/api/translate/explain`).
+   - Backend: call provider-specific endpoints/params to request alternatives or metadata; gracefully degrade if unavailable.
+   - Guardrails: rate limit, cache per original text + lang pair, and avoid storing raw message content server-side.
+
+
+

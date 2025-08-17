@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="fixed bottom-3 right-3 z-50 select-none">
           <div className="px-2 py-1 rounded bg-black/60 text-[11px] text-gray-100 border border-white/10 tracking-wide">
-            {v ? `v0.${v.version} ${v.timestamp}` : 'v0.0 dev'}
+            {v ? `v0.${String(v.version).padStart(4, '0')} ${v.timestamp}` : 'v0.0 dev'}
           </div>
         </div>
       </body>
