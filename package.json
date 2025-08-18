@@ -6,13 +6,15 @@
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
     "start": "npm run start -w apps/web",
-    "dev:windows": "start-windows.bat",
-    "dev:windows:ps": "powershell -ExecutionPolicy Bypass -File start-windows.ps1",
     "dev:web": "npm run dev -w apps/web",
     "dev:signaling": "npm run start -w services/signaling",
     "install:all": "npm install && npm install -w apps/web && npm install -w services/signaling",
-    "install:nodejs": "powershell -ExecutionPolicy Bypass -File install-nodejs.ps1",
-    "smoke": "bash scripts/smoke.sh"
+    "smoke": "bash scripts/smoke.sh",
+    "docker:dev": "docker compose --profile dev up",
+    "docker:prod": "docker compose --profile prod up -d",
+    "docker:build": "docker compose --profile dev build",
+    "docker:test": "docker compose exec web npm test",
+    "docker:health": "make health"
   }
 }
 

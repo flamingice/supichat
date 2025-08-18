@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+.next/
+**/.next/
+dist/
+build/
+coverage/
+
+# Development files
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.npm
+.cache
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+.claude/
+
+# Test files
+.nyc_output/
+playwright-report/
+test-results/
+
+# OS files
+Thumbs.db
+*.pid
+*.seed
+*.pid.lock
+
+# Documentation and configs
+README.md
+*.md
+!package.json
+!package-lock.json
+
+# Temporary files
+tmp/
+temp/

@@ -1,15 +1,55 @@
-FROM node:20-alpine
+# Unified Signaling Server Dockerfile
+# Supports both development and production builds via target selection
+
+FROM node:20-alpine AS base
 RUN apk add --no-cache wget && \
     npm install -g npm@latest && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 signaling
 
+# Dependencies stage
+FROM base AS deps
 WORKDIR /app
 COPY services/signaling/package*.json ./
-# Use npm install to support absence of a dedicated lockfile in the service dir
 RUN npm install --omit=dev && npm cache clean --force
 
+# Development dependencies stage
+FROM base AS dev-deps
+WORKDIR /app
+COPY services/signaling/package*.json ./
+RUN npm install
+
+# Development stage
+FROM dev-deps AS development
+WORKDIR /app
 COPY services/signaling/ ./
+RUN chown -R signaling:nodejs /app
 USER signaling
 EXPOSE 4001
+ENV NODE_ENV=development
+ENV PORT=4001
+CMD ["npm", "start"]
+
+# Production stage
+FROM base AS production
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=4001
+
+# Copy production dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy application code
+COPY services/signaling/ ./
+
+# Ensure correct ownership
+RUN chown -R signaling:nodejs /app
+
+USER signaling
+EXPOSE 4001
+
+# Health check for signaling server
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4001/health || exit 1
+
 CMD ["node", "server.js"]
