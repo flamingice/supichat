@@ -10,3 +10,8 @@ coverage
 
 
 .env.local
+
+# Secret remediation artifacts
+secret-replacements.txt
+remediation-script.sh
+git-filter-repo
