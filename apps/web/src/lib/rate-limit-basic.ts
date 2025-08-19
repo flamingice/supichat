@@ -1,6 +1,6 @@
 /**
- * Optimized rate limiter with deterministic TTL cleanup and size limits
- * Replaces random cleanup with predictable eviction strategy
+ * Simple in-memory rate limiter
+ * For production, consider using Redis or a proper rate limiting service
  */
 
 interface RateLimitEntry {
@@ -8,28 +8,23 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-class OptimizedRateLimiter {
+class RateLimiter {
   private store = new Map<string, RateLimitEntry>();
   private windowMs: number;
   private maxRequests: number;
-  private maxStoreSize: number;
-  private lastCleanup: number = 0;
-  private cleanupInterval: number = 30000; // 30 seconds
 
-  constructor(windowMs: number, maxRequests: number, maxStoreSize = 10000) {
+  constructor(windowMs: number, maxRequests: number) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
-    this.maxStoreSize = maxStoreSize;
   }
 
   isAllowed(key: string): { allowed: boolean; resetTime?: number; remaining?: number } {
     const now = Date.now();
     const entry = this.store.get(key);
 
-    // Deterministic cleanup - run every 30 seconds OR when store gets too large
-    if (now - this.lastCleanup > this.cleanupInterval || this.store.size > this.maxStoreSize) {
+    // Clean expired entries periodically
+    if (Math.random() < 0.01) {
       this.cleanup(now);
-      this.lastCleanup = now;
     }
 
     if (!entry || now > entry.resetTime) {
@@ -50,40 +45,17 @@ class OptimizedRateLimiter {
   }
 
   private cleanup(now: number) {
-    let deletedCount = 0;
     for (const [key, entry] of this.store.entries()) {
       if (now > entry.resetTime) {
         this.store.delete(key);
-        deletedCount++;
       }
     }
-
-    // If still over size limit after expiry cleanup, remove oldest entries
-    if (this.store.size > this.maxStoreSize) {
-      const entries = Array.from(this.store.entries());
-      entries.sort((a, b) => a[1].resetTime - b[1].resetTime);
-      const toRemove = entries.slice(0, entries.length - this.maxStoreSize);
-      toRemove.forEach(([key]) => {
-        this.store.delete(key);
-        deletedCount++;
-      });
-    }
-
-    console.log(`[RateLimit] Cleaned up ${deletedCount} expired entries, store size: ${this.store.size}`);
-  }
-
-  getStats() {
-    return {
-      storeSize: this.store.size,
-      maxStoreSize: this.maxStoreSize,
-      lastCleanup: new Date(this.lastCleanup).toISOString()
-    };
   }
 }
 
 // Rate limiters for different endpoints
-export const translateLimiter = new OptimizedRateLimiter(60 * 1000, 30, 5000); // 30 requests per minute, max 5k entries
-export const roomLimiter = new OptimizedRateLimiter(60 * 1000, 10, 1000); // 10 room creations per minute, max 1k entries
+export const translateLimiter = new RateLimiter(60 * 1000, 30); // 30 requests per minute
+export const roomLimiter = new RateLimiter(60 * 1000, 10); // 10 room creations per minute
 
 export function getRateLimitKey(req: Request, prefix: string): string {
   // Try to get real IP from headers (for proxy setups)

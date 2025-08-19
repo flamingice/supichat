@@ -1,0 +1,97 @@
+version: '3.9'
+
+networks:
+  supichat:
+    driver: bridge
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      target: ${BUILD_TARGET:-development}
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-/supichat}
+      - NEXT_PUBLIC_SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/supichat/socket.io}
+      - NEXT_PUBLIC_SIGNALING_ORIGIN=${NEXT_PUBLIC_SIGNALING_ORIGIN:-http://localhost:4001}
+      - DEEPL_API_KEY=${DEEPL_API_KEY:-}
+      - NEXT_PUBLIC_STUN_1=${NEXT_PUBLIC_STUN_1:-stun:stun.l.google.com:19302}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      signaling:
+        condition: service_healthy
+    networks:
+      - supichat
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/supichat/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  signaling:
+    build:
+      context: .
+      dockerfile: Dockerfile.signaling
+      target: ${BUILD_TARGET:-development}
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4001
+      - SIGNALING_PATH=${NEXT_PUBLIC_SIGNALING_PATH:-/supichat/socket.io}
+    ports:
+      - "${SIGNALING_PORT:-4001}:4001"
+    networks:
+      - supichat
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:latest
+    profiles: 
+      - turn
+    ports:
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    environment:
+      - TURN_SECRET=${TURN_SECRET:-dev-secret-change-me}
+    command: >
+      -n --no-cli --no-tls --no-dtls
+      --realm=supichat
+      --listening-port=3478
+      --min-port=49160 --max-port=49200
+      --lt-cred-mech --use-auth-secret --static-auth-secret=${TURN_SECRET:-dev-secret-change-me}
+      --fingerprint
+    networks:
+      - supichat
+    restart: unless-stopped
+
+  # Optional reverse proxy for production
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "${PROXY_PORT:-80}:80"
+    volumes:
+      - ./infra/nginx.simple.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - signaling
+    profiles:
+      - prod
+      - proxy
+    networks:
+      - supichat
+    restart: unless-stopped

@@ -1,262 +1,219 @@
 # SupiChat
 
-A real-time video chat application with automatic message translation.
+A real-time video chat application with automatic message translation powered by Docker.
 
-## Features
+## Prerequisites
 
+- **Docker** and **Docker Compose** (v2.0+)
+- 2GB RAM minimum, 4GB recommended
 
-## Quick Start for Windows
+## Quick Start
 
-### Prerequisites
+### 1. Clone and Configure
 
-1. **Node.js** (v18 or higher) - Will be automatically installed if not present
-2. **npm** (comes with Node.js)
-
-### Auto-Installation Feature
-
-SupiChat includes automatic Node.js installation! If Node.js is not detected on your system, the startup scripts will:
-
-
-**Note**: For best results, run the scripts as Administrator. If you prefer manual installation, you can:
-
-### Installation & Running
-
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd supichat
-   ```
-
-2. **Run the Windows startup script:**
-   ```bash
-   # Option 1: Use the batch file (recommended)
-   start-windows.bat
-   
-   # Option 2: Use PowerShell script (better error handling)
-   start-windows.ps1
-   
-   # Option 3: Use npm script
-   npm run dev:windows
-   
-   # Option 4: Use npm script with PowerShell
-   npm run dev:windows:ps
-   ```
-
-3. **Or run manually:**
-   ```bash
-   # Install all dependencies
-   npm run install:all
-   
-   # Copy environment file
-   copy apps\web\env.local.example apps\web\.env.local
-   
-   # Start web app (in one terminal)
-   npm run dev:web
-   
-   # Start signaling server (in another terminal)
-   npm run dev:signaling
-   ```
-
-4. **Open your browser:**
-   - Web app: http://localhost:3000
-   - Signaling server: http://localhost:4001
-
-## Manual Setup
-
-### Environment Configuration
-
-1. Copy the example environment file:
-   ```bash
-   copy apps\web\env.local.example apps\web\.env.local
-   ```
-
-2. Edit `apps/web/.env.local` if needed:
-   ```env
-   # Signaling server configuration
-   NEXT_PUBLIC_SIGNALING_ORIGIN=http://localhost:4001
-   NEXT_PUBLIC_SIGNALING_PATH=/supichat/socket.io
-   NEXT_PUBLIC_BASE_PATH=/supichat
-   
-   # Default language
-   NEXT_PUBLIC_DEFAULT_LANG=en
-   
-   # STUN server for WebRTC
-   NEXT_PUBLIC_STUN_1=stun:stun.l.google.com:19302
-   ```
-
-### Running Individual Services
-
-**Web App (Next.js):**
 ```bash
-cd apps/web
-npm install
-npm run dev
+git clone <repository-url>
+cd supichat
+cp .env.example .env
 ```
 
-**Signaling Server:**
+### 2. Add Your Translation API Key
+
+Edit `.env` and add your DeepL API key:
 ```bash
-cd services/signaling
-npm install
-npm start
+DEEPL_API_KEY=your-deepl-api-key-here
 ```
+
+### 3. Start SupiChat
+
+```bash
+# Development mode (with hot reload)
+docker compose --profile dev up
+
+# Production mode  
+docker compose --profile prod up -d
+
+# With TURN server (for better NAT traversal)
+docker compose --profile dev --profile turn up
+```
+
+### 4. Access the Application
+
+- **Web App**: http://localhost:3000/supichat
+- **Signaling Server**: http://localhost:4001/health
+
+## Development
+
+### Development Workflow
+
+```bash
+# Start development environment
+docker compose --profile dev up
+
+# View logs
+docker compose logs -f
+
+# Rebuild after code changes
+docker compose --profile dev up --build
+
+# Run tests
+docker compose exec web npm test
+
+# Open a shell in the web container
+docker compose exec web sh
+```
+
+### Development Features
+
+- **Hot Reload**: Code changes automatically update in containers
+- **Health Monitoring**: Built-in health checks for all services
+- **Isolated Environment**: Complete development environment in containers
+
+## Testing
+
+```bash
+# Unit tests
+docker compose exec web npm test
+
+# End-to-end tests (Playwright)
+docker compose exec web npm run e2e
+
+# Smoke tests
+docker compose exec web npm run smoke
+```
+
+## Production Deployment
+
+### Quick Production Setup
+
+```bash
+# Set production environment
+echo "NODE_ENV=production" >> .env
+echo "BUILD_TARGET=production" >> .env
+
+# Start production services
+docker compose --profile prod up -d
+
+# Check health
+docker compose exec web wget -qO- http://localhost:3000/supichat/api/health
+docker compose exec signaling wget -qO- http://localhost:4001/health
+```
+
+### Production Considerations
+
+- **Environment Variables**: Review `.env.example` and configure all required settings
+- **HTTPS**: Configure nginx proxy for SSL/TLS in production
+- **Secrets**: Use Docker secrets or external secret management for sensitive values
+- **Monitoring**: Health endpoints available at `/supichat/api/health` and `/health`
+
+## Available Services
+
+### Core Services
+- **web**: Next.js frontend application
+- **signaling**: Socket.IO signaling server
+
+### Optional Services  
+- **coturn**: TURN server for WebRTC NAT traversal (`--profile turn`)
+- **proxy**: nginx reverse proxy (`--profile prod`)
+
+## Configuration
+
+### Environment Variables
+
+All configuration is handled through environment variables. See `.env.example` for complete documentation.
+
+**Key Variables:**
+- `DEEPL_API_KEY`: Required for message translation
+- `TURN_SECRET`: Change in production for security
+- `WEB_PORT` / `SIGNALING_PORT`: Customize service ports
+
+### Docker Profiles
+
+```bash
+# Development
+docker compose --profile dev up
+
+# Production
+docker compose --profile prod up
+
+# With TURN server
+docker compose --profile dev --profile turn up
+
+# Multiple profiles
+docker compose --profile dev --profile turn --profile proxy up
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Port Conflicts:**
+```bash
+# Change ports in .env
+echo "WEB_PORT=3001" >> .env
+echo "SIGNALING_PORT=4002" >> .env
+```
+
+**Build Issues:**
+```bash
+# Clean rebuild
+docker compose down
+docker system prune -f
+docker compose --profile dev up --build
+```
+
+**Permission Issues:**
+```bash
+# Reset Docker volumes
+docker compose down -v
+docker compose --profile dev up
+```
+
+**Health Check Failures:**
+```bash
+# Check service logs
+docker compose logs web
+docker compose logs signaling
+
+# Manual health check
+docker compose exec web wget -qO- http://localhost:3000/supichat/api/health
+```
+
+### Debug Mode
+
+```bash
+# Verbose logging
+docker compose --profile dev up --verbose
+
+# Container shell access
+docker compose exec web sh
+docker compose exec signaling sh
+```
+
+## Camera/Microphone Access
+
+- **Localhost**: Camera and microphone work automatically
+- **Production**: Requires HTTPS for camera/microphone access
+- **Testing**: Use `http://localhost:3000/supichat` for development
 
 ## Project Structure
 
 ```
 supichat/
-├── apps/
-│   └── web/                 # Next.js frontend
-│       ├── src/
-│       │   ├── app/         # App router pages
-│       │   └── lib/         # Utilities
-│       └── package.json
-├── services/
-│   └── signaling/           # Socket.IO signaling server
-│       ├── server.js
-│       └── package.json
-├── infra/                   # Docker configuration
-├── start-windows.bat        # Windows startup script
-└── package.json
+├── apps/web/                 # Next.js frontend
+├── services/signaling/       # Socket.IO signaling server
+├── infra/                    # Infrastructure configurations
+├── docker-compose.yml        # Unified Docker setup
+├── Dockerfile.web           # Web app container
+├── Dockerfile.signaling     # Signaling server container
+├── .env.example             # Environment configuration template
+└── .dockerignore            # Docker build context optimization
 ```
 
-## Development
+## Contributing
 
-### Available Scripts
-
-
-### Windows Scripts
-
-
-### Available Scripts
-
-
-### Troubleshooting
-
-**Node.js installation issues:**
-
-**Port already in use:**
-
-**WebRTC issues:**
-
-**Translation not working:**
-
-## Docker (Windows/macOS/Linux)
-
-Quickest way to run everything with minimal setup using Docker Desktop:
-
-1. Ensure Docker Desktop is installed and running
-2. From repo root, create `.env` (Compose reads it via `infra/docker-compose.yml`):
-   ```bash
-   # Windows PowerShell
-   copy infra\env.local.example .env
-   # macOS/Linux
-   # cp infra/env.local.example .env
-   ```
-   Then edit `.env` to add your `DEEPL_API_KEY` (used for chat translation).
-3. Start services:
-   ```bash
-   docker compose -f infra/docker-compose.yml up --build
-   ```
-4. Open: http://localhost:3000/supichat
-5. Health checks (optional):
-   ```bash
-   curl http://localhost:3000/supichat/api/health
-   curl http://localhost:4001/health
-   ```
-
-Notes:
-  ```bash
-  docker compose -f infra/docker-compose.yml --profile turn up --build
-  ```
-  Ensure `TURN_SECRET` is set in `.env`.
-
-## 🚀 Quick Start (Production)
-
-**One command deployment with Docker:**
-
-```bash
-# Fresh Ubuntu/Debian server? Run this:
-git clone https://github.com/yourusername/supichat.git
-cd supichat
-bash infra/install-docker.sh
-```
-
-**That's it!** The script automatically:
-
-## 📹 Camera/Microphone Access
-
-**For Testing:**
-
-**For Production (Public IP):**
-
-**For Testing Public IP without HTTPS:**
-
-
-## 🛠️ Development
-
-**Local development with hot reload:**
-
-```bash
-# Clone and start
-git clone https://github.com/yourusername/supichat.git
-cd supichat
-npm install
-npm run dev
-
-# Access at http://localhost:3000/supichat
-# Camera/mic work perfectly on localhost!
-```
-
-
-## 🔧 Alternative Deployments
-
-### systemd (Traditional) ⚙️
-
-**For traditional bare-metal server deployments:**
-
-```bash
-# Install Node.js 18+ first
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Deploy SupiChat
-git clone https://github.com/yourusername/supichat.git
-cd supichat
-bash infra/install-systemd.sh
-```
-
-**Benefits:** Native systemd integration, traditional service management, system-level logging.
-
-### PM2 (Legacy) 📦
-
-**Deprecated but still available:**
-
-```bash
-bash infra/install-ubuntu.sh  # Legacy PM2-based installer
-```
-
-
-### Configuration Notes
-
-HTTPS (domain or IP)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and contribution guidelines.
 
 ## License
 
 [Your License Here]
-
-
-
-## Ideas / Roadmap
-
-   - Feed the last 10–20 chat lines as context into the translation request so tone/names/pronouns remain consistent.
-   - Implement in `apps/web/src/app/api/translate/route.ts`: accept optional `context` payload (array of recent messages) and pass to provider if supported.
-   - Maintain a per-room sliding window on the client; trim to a safe token/char budget. Redact PII before sending.
-   - Add rate limiting and caching to avoid provider overuse; include a feature flag to toggle context mode.
-
-   - Small info icon beside translated text opens a popover with: alternative translations (when the provider supports variants), glossary hits, formality level, and a link to “Improve translation”.
-   - UI: accessible icon button with tooltip; popover component that lazy-loads details via a lightweight API (`/api/translate/explain`).
-   - Backend: call provider-specific endpoints/params to request alternatives or metadata; gracefully degrade if unavailable.
-   - Guardrails: rate limit, cache per original text + lang pair, and avoid storing raw message content server-side.
-
-
-

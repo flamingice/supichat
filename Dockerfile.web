@@ -1,0 +1,66 @@
+# Unified Web Application Dockerfile
+# Supports both development and production builds via target selection
+
+FROM node:20-alpine AS base
+RUN apk add --no-cache wget && \
+    npm install -g npm@latest && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Dependencies stage
+FROM base AS deps
+WORKDIR /app
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
+RUN npm ci --only=production && npm cache clean --force
+
+# Build dependencies stage (includes dev deps for building)
+FROM base AS build-deps
+WORKDIR /app
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
+RUN npm ci
+
+# Development stage
+FROM build-deps AS development
+WORKDIR /app
+COPY . .
+# Create writable temp directory for version file
+RUN mkdir -p /tmp/web-version && chmod 777 /tmp/web-version
+USER nextjs
+EXPOSE 3000
+ENV NODE_ENV=development
+ENV VERSION_OUTPUT_PATH=/tmp/web-version/version.json
+# Use the monorepo-aware dev command
+CMD ["npm", "run", "dev:web"]
+
+# Builder stage (for production)
+FROM build-deps AS builder
+WORKDIR /app
+COPY . .
+RUN npm run build -w apps/web
+
+# Production stage
+FROM base AS production
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copy production dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+
+# Ensure correct ownership
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+EXPOSE 3000
+
+# Health check endpoint will be available at /supichat/api/health
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/supichat/api/health || exit 1
+
+# In monorepo standalone output, server.js resides under apps/web
+CMD ["node", "apps/web/server.js"]

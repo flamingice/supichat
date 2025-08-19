@@ -1,64 +1,79 @@
 import { NextResponse } from 'next/server';
 import { translateLimiter, getRateLimitKey, createRateLimitResponse } from '@/lib/rate-limit';
+import { getTranslationService } from '@/lib/translation-service';
 
 export async function POST(req: Request) {
-  // Rate limiting
+  // Rate limiting with optimized limiter
   const rateLimitKey = getRateLimitKey(req, 'translate');
   const rateLimit = translateLimiter.isAllowed(rateLimitKey);
   
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.resetTime!);
   }
+
   let text: string = '';
   let targetLang: string = 'EN';
+  let sourceLang: string | undefined;
+  
   try {
     const body = await req.json();
     text = String(body?.text ?? '');
     targetLang = String(body?.targetLang ?? 'EN');
+    sourceLang = body?.sourceLang ? String(body.sourceLang) : undefined;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-  const apiKey = process.env.DEEPL_API_KEY;
-  if (!apiKey) {
-    // Optional soft-fail: return empty translation instead of 500
+
+  if (!text.trim()) {
     return NextResponse.json({ translated: '' }, { status: 200 });
   }
 
-  // Default DeepL endpoint; allow override for free/commercial endpoints
-  const apiUrl = process.env.DEEPL_API_URL ||
-    (process.env.DEEPL_API_FREE === '1' || process.env.DEEPL_API_FREE === 'true'
-      ? 'https://api-free.deepl.com/v2/translate'
-      : 'https://api.deepl.com/v2/translate');
-
-  // DeepL expects uppercase language codes, e.g. EN, DE, JA, ZH
-  const target = String(targetLang || 'EN').toUpperCase();
-
   try {
-    const body = new URLSearchParams({ text: String(text || ''), target_lang: target });
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `DeepL-Auth-Key ${apiKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString()
+    const translationService = getTranslationService();
+    const translated = await translationService.translate(text, targetLang, sourceLang);
+    
+    // Include cache statistics in development
+    const stats = process.env.NODE_ENV === 'development' ? {
+      cacheHitRatio: translationService.getCacheHitRatio(),
+      stats: translationService.getStats()
+    } : undefined;
+
+    return NextResponse.json({ 
+      translated,
+      ...(stats && { debug: stats })
     });
-
-    if (!response.ok) {
-      const errBody = await safeJson(response);
-      return NextResponse.json({ error: 'Translation request failed', details: errBody }, { status: response.status });
-    }
-
-    const data = await response.json();
-    const translated = data?.translations?.[0]?.text ?? '';
-    return NextResponse.json({ translated });
   } catch (err: any) {
-    return NextResponse.json({ error: 'Translation error', details: String(err?.message || err) }, { status: 500 });
+    console.error('[Translation API] Error:', err);
+    return NextResponse.json({ 
+      error: 'Translation error', 
+      details: String(err?.message || err) 
+    }, { status: 500 });
   }
 }
 
-async function safeJson(r: Response) {
-  try { return await r.json(); } catch { return await r.text().catch(() => ''); }
+// Health endpoint to check translation service status
+export async function GET() {
+  try {
+    const translationService = getTranslationService();
+    const stats = translationService.getStats();
+    
+    return NextResponse.json({
+      status: 'ok',
+      service: 'translation',
+      timestamp: new Date().toISOString(),
+      stats: {
+        ...stats,
+        cacheHitRatio: translationService.getCacheHitRatio()
+      }
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: 'error',
+      service: 'translation',
+      timestamp: new Date().toISOString(),
+      error: String(error)
+    }, { status: 500 });
+  }
 }
 
 

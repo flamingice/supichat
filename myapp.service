@@ -1,0 +1,17 @@
+[Unit]
+Description=SupiChat Application
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/myapp
+ExecStart=/usr/bin/docker compose --env-file /etc/myapp/.env up -d
+ExecStop=/usr/bin/docker compose --env-file /etc/myapp/.env down
+TimeoutStartSec=0
+User=deploy
+Group=deploy
+
+[Install]
+WantedBy=multi-user.target
