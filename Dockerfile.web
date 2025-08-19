@@ -27,6 +27,8 @@ WORKDIR /app
 COPY . .
 # Create writable temp directory for version file
 RUN mkdir -p /tmp/web-version && chmod 777 /tmp/web-version
+# Create .next directory and ensure proper ownership
+RUN mkdir -p apps/web/.next && chown -R nextjs:nodejs /app
 USER nextjs
 EXPOSE 3000
 ENV NODE_ENV=development
