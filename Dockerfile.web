@@ -25,9 +25,12 @@ RUN npm ci
 FROM build-deps AS development
 WORKDIR /app
 COPY . .
+# Create writable temp directory for version file
+RUN mkdir -p /tmp/web-version && chmod 777 /tmp/web-version
 USER nextjs
 EXPOSE 3000
 ENV NODE_ENV=development
+ENV VERSION_OUTPUT_PATH=/tmp/web-version/version.json
 # Use the monorepo-aware dev command
 CMD ["npm", "run", "dev:web"]
 
