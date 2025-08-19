@@ -1,4 +1,4 @@
-import './globals-simple.css';
+// import './globals-simple.css';
 import type { ReactNode } from 'react';
 import { getVersion } from '@/lib/version';
 
