@@ -3,22 +3,28 @@ import { useState } from 'react';
 
 export default function SimplePage() {
   const [creating, setCreating] = useState(false);
-  const base = process.env.NEXT_PUBLIC_BASE_PATH || '/supichat';
+  const base = '/supichat'; // Use static path to avoid SSR/client mismatch
 
-  async function createRoom() {
+  const createRoom = async () => {
     setCreating(true);
     try {
-      const r = await fetch(`${base}/api/room/create`, { method: 'POST' });
-      const j = await r.json();
-      if (j.id) {
-        location.href = `${base}/room/${j.id}`;
+      const response = await fetch(`${base}/api/room/create`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.id) {
+        window.location.href = `${base}/room/${data.id}`;
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Room creation failed:', error);
       alert('Failed to create room');
     } finally {
       setCreating(false);
     }
-  }
+  };
 
   const styles = {
     container: {
