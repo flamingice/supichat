@@ -20,7 +20,12 @@ body { @apply bg-gray-900 text-white; }
 
 /* Meet-style components */
 .meet-surface { @apply bg-gray-800 border border-gray-700; }
-.meet-card { @apply bg-gray-800 rounded-lg border border-gray-600 shadow-lg; }
+.meet-card { 
+  @apply bg-gray-800 rounded-lg border border-gray-600 shadow-lg;
+  background-color: rgba(31, 41, 55, 0.92) !important; /* fallback dark */
+  color: #fff !important;
+  overflow: hidden;
+}
 .meet-pill { @apply rounded-full px-3 py-1 text-xs font-medium bg-gray-700 text-gray-200 border border-gray-600; }
 .meet-btn { 
   @apply inline-flex items-center justify-center h-10 px-4 rounded-lg font-medium transition-all duration-200;
@@ -84,6 +89,23 @@ body { @apply bg-gray-900 text-white; }
 .meet-select {
   @apply w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white;
   @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+/* Defensive styles for hero section */
+.hero-content {
+  position: relative;
+  z-index: 10;
+}
+
+.hero-decor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-width: 48%;
+  max-height: 50vh;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Legacy support */

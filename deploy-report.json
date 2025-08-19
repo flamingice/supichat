@@ -1,0 +1,91 @@
+{
+  "deployment_report": {
+    "timestamp": "2025-08-19T08:32:00Z",
+    "server": "165.22.241.229",
+    "application": "SupiChat",
+    "repository": "https://github.com/flamingice/supichat",
+    "branch": "main",
+    "deployment_id": "deploy-2025-08-19-0813",
+    "phases": {
+      "phase_0_precheck": {
+        "status": "COMPLETED",
+        "details": {
+          "connection": "✅ SSH successful",
+          "disk_space": "✅ 21G available",
+          "os": "✅ Ubuntu 24.04",
+          "ssh_port": "✅ Port 22 open"
+        }
+      },
+      "phase_1_server_prep": {
+        "status": "COMPLETED", 
+        "details": {
+          "deploy_user": "✅ Created",
+          "prerequisites": "✅ Installed",
+          "docker": "✅ Already present",
+          "firewall": "✅ Configured (SSH, 80, 443, 3000, 4001)",
+          "directories": "✅ Created /opt/myapp"
+        }
+      },
+      "phase_2_code_deploy": {
+        "status": "COMPLETED",
+        "details": {
+          "repository": "✅ Cloned successfully",
+          "files": "✅ Docker config files present",
+          "env_example": "✅ Created"
+        }
+      },
+      "phase_3_secrets": {
+        "status": "COMPLETED",
+        "details": {
+          "deepl_key": "✅ Stored securely at /etc/myapp/.env",
+          "permissions": "✅ 600 (deploy:deploy)",
+          "gitignore": "✅ Updated"
+        }
+      },
+      "phase_4_start_app": {
+        "status": "IN_PROGRESS",
+        "details": {
+          "docker_compose": "✅ Started building",
+          "containers": "🔄 Building (nginx, web, signaling)",
+          "systemd": "✅ Service created and enabled"
+        }
+      },
+      "phase_5_testing": {
+        "status": "PARTIAL",
+        "details": {
+          "health_check": "❌ App still starting",
+          "containers": "🔄 Build in progress"
+        }
+      }
+    },
+    "configuration": {
+      "app_directory": "/opt/myapp",
+      "env_file": "/etc/myapp/.env",
+      "user": "deploy",
+      "compose_file": "docker-compose.prod.yml",
+      "log_file": "/var/log/myapp-deploy.log"
+    },
+    "security": {
+      "deepl_api_key": "REDACTED(DEEPL_KEY,len=36)",
+      "env_permissions": "600",
+      "user_isolation": "deploy user (non-root)",
+      "firewall": "UFW enabled"
+    },
+    "urls": {
+      "web_app": "http://165.22.241.229:3000",
+      "signaling": "http://165.22.241.229:4001", 
+      "admin_ssh": "ssh root@165.22.241.229"
+    },
+    "next_steps": [
+      "Wait for Docker build to complete (5-10 minutes)",
+      "Test web application at http://165.22.241.229:3000",
+      "Test translation feature",
+      "Configure domain and TLS if needed"
+    ],
+    "rollback": {
+      "stop_app": "systemctl stop myapp.service",
+      "remove_containers": "docker compose -f /opt/myapp/docker-compose.prod.yml down",
+      "restore_backup": "Available in /var/log/myapp-deploy.log"
+    }
+  }
+}

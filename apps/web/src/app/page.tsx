@@ -36,8 +36,10 @@ export default function HomePage() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full">
+      {/* Defensive wrapper to ensure contrast if CSS not loaded */}
+      <div className="bg-slate-900 text-white min-h-screen">
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="max-w-4xl w-full hero-content">
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-5xl font-light text-white mb-4">SupiChat</h1>
@@ -104,6 +106,7 @@ export default function HomePage() {
           {/* Footer */}
           <div className="text-center mt-8 text-gray-500 text-sm">
             No downloads required • Works in your browser
+          </div>
           </div>
         </div>
       </div>

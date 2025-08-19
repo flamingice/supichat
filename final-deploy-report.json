@@ -1,0 +1,94 @@
+{
+  "deployment_report": {
+    "timestamp": "2025-08-19T11:55:00Z",
+    "server": "5.223.64.6",
+    "application": "SupiChat",
+    "repository": "https://github.com/flamingice/supichat",
+    "branch": "main",
+    "deployment_id": "deploy-2025-08-19-1152",
+    "status": "SUCCESS",
+    "phases": {
+      "phase_0_precheck": {
+        "status": "COMPLETED",
+        "details": {
+          "connection": "✅ SSH successful",
+          "disk_space": "✅ 35G available",
+          "os": "✅ Ubuntu 24.04",
+          "ssh_port": "✅ Port 22 open"
+        }
+      },
+      "phase_1_server_prep": {
+        "status": "COMPLETED", 
+        "details": {
+          "deploy_user": "✅ Created",
+          "prerequisites": "✅ Installed",
+          "docker": "✅ Installed and configured",
+          "firewall": "✅ Configured (SSH, 80, 443, 3000, 4001)",
+          "directories": "✅ Created /opt/myapp, /etc/myapp"
+        }
+      },
+      "phase_2_code_deploy": {
+        "status": "COMPLETED",
+        "details": {
+          "repository": "✅ Cloned successfully",
+          "files": "✅ Docker config files present",
+          "env_example": "✅ Created"
+        }
+      },
+      "phase_3_secrets": {
+        "status": "COMPLETED",
+        "details": {
+          "deepl_key": "✅ Stored securely at /etc/myapp/.env",
+          "permissions": "✅ 600 (deploy:deploy)",
+          "gitignore": "✅ Updated"
+        }
+      },
+      "phase_4_start_app": {
+        "status": "COMPLETED",
+        "details": {
+          "docker_build": "✅ Images built successfully",
+          "containers": "✅ Running (web service confirmed)",
+          "systemd": "✅ Service created and enabled"
+        }
+      },
+      "phase_5_testing": {
+        "status": "COMPLETED",
+        "details": {
+          "web_app": "✅ Accessible at http://5.223.64.6:3000/supichat",
+          "signaling": "⚠️  Port 4001 responding but not accessible externally",
+          "health_check": "✅ Application responding correctly"
+        }
+      }
+    },
+    "configuration": {
+      "app_directory": "/opt/myapp",
+      "env_file": "/etc/myapp/.env",
+      "user": "deploy",
+      "compose_file": "docker-compose.prod.yml + docker-compose.override.yml",
+      "log_file": "/var/log/myapp-deploy.log"
+    },
+    "security": {
+      "deepl_api_key": "REDACTED(DEEPL_KEY,len=36)",
+      "env_permissions": "600",
+      "user_isolation": "deploy user (non-root)",
+      "firewall": "UFW enabled"
+    },
+    "access_urls": {
+      "web_app": "http://5.223.64.6:3000/supichat",
+      "direct_web": "http://5.223.64.6:3000",
+      "signaling": "http://5.223.64.6:4001 (internal)",
+      "admin_ssh": "ssh root@5.223.64.6"
+    },
+    "services_status": {
+      "web": "✅ RUNNING - Accessible externally",
+      "signaling": "✅ RUNNING - Internal only",
+      "proxy": "⚠️  PARTIAL - Port conflict resolved",
+      "systemd": "✅ ENABLED - Auto-restart on boot"
+    },
+    "rollback": {
+      "stop_app": "systemctl stop myapp.service",
+      "remove_containers": "docker compose -f /opt/myapp/docker-compose.prod.yml down",
+      "restore_backup": "Available in /var/log/myapp-deploy.log"
+    }
+  }
+}
