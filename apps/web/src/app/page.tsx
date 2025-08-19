@@ -37,13 +37,12 @@ export default function HomePage() {
   return (
     <ErrorBoundary>
       {/* Defensive wrapper to ensure contrast if CSS not loaded */}
-      <div className="bg-slate-900 text-white min-h-screen">
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="max-w-4xl w-full hero-content">
+      <div className="hero-container">
+        <div className="hero-content">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-light text-white mb-4">SupiChat</h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold mb-8">SupiChat</h1>
+            <p className="text-xl text-gray-300 mb-8">
               Premium video conferencing with real-time translation. 
               Connect globally, communicate naturally.
             </p>
