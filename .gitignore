@@ -15,3 +15,4 @@ coverage
 secret-replacements.txt
 remediation-script.sh
 git-filter-repo
+.claude-session-state.json
